@@ -15,8 +15,11 @@ type ReportQuote = {
 function ResultsContent() {
   const searchParams = useSearchParams();
   const url = searchParams.get("url");
+  const sessionId = searchParams.get("session_id");
   const [result, setResult] = useState<TrustScoreResult | null>(null);
   const [quote, setQuote] = useState<ReportQuote | null>(null);
+  const [paid, setPaid] = useState(false);
+  const [paymentChecking, setPaymentChecking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -60,6 +63,24 @@ function ResultsContent() {
     };
   }, [url]);
 
+  useEffect(() => {
+    if (!sessionId || !url) return;
+    let cancelled = false;
+    setPaymentChecking(true);
+    fetch(`/api/stripe/session?session_id=${encodeURIComponent(sessionId)}&url=${encodeURIComponent(url)}`)
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        if (!cancelled && data?.paid === true) setPaid(true);
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (!cancelled) setPaymentChecking(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionId, url]);
+
   if (loading) {
     return (
       <div className="mx-auto max-w-3xl px-6 py-24 text-center text-slate-500">
@@ -81,7 +102,8 @@ function ResultsContent() {
 
   const previewCount = Math.max(1, Math.ceil(result.checks.length / 2));
   const previewChecks = result.checks.slice(0, previewCount);
-  const lockedChecks = result.checks.slice(previewCount);
+  const lockedChecks = paid ? [] : result.checks.slice(previewCount);
+  const visibleChecks = paid ? result.checks : previewChecks;
   const reportUrl = `/pricing?url=${encodeURIComponent(result.url)}`;
 
   return (
@@ -99,7 +121,7 @@ function ResultsContent() {
             <h1 className="mt-2 text-2xl font-bold text-slate-900">{result.platformName} listing</h1>
             <p className="mt-1 max-w-sm truncate text-sm text-slate-500">{result.url}</p>
             <div className="mt-4">
-              <TrustBadge tier={result.tier} label="Preview only" size="lg" />
+              <TrustBadge tier={result.tier} label={paid ? "Unlocked" : "Preview only"} size="lg" />
             </div>
           </div>
           <div className="text-center">
@@ -109,8 +131,9 @@ function ResultsContent() {
         </div>
 
         <div className="mt-6 rounded-2xl bg-amber-50 p-4 text-sm text-amber-900 ring-1 ring-amber-100">
-          This page is a reusable template. Vehicle facts, history, and trust signals remain
-          unverified until the complete report is unlocked.
+          {paid
+            ? "Payment confirmed. This prototype still labels its checks as simulated until live provider integrations are connected."
+            : "This page is a reusable template. Vehicle facts, history, and trust signals remain unverified until the complete report is unlocked."}
         </div>
 
         <section className="mt-6">
@@ -149,9 +172,13 @@ function ResultsContent() {
         <section className="mt-8">
           <div className="flex items-end justify-between gap-4">
             <div>
-              <h2 className="text-lg font-semibold text-slate-900">Preview checks</h2>
+              <h2 className="text-lg font-semibold text-slate-900">
+                {paid ? "Completed checks" : "Preview checks"}
+              </h2>
               <p className="mt-1 text-sm text-slate-500">
-                {previewChecks.length} of {result.checks.length} checks are shown in this preview.
+                {paid
+                  ? "Payment confirmed; the full check list is now visible."
+                  : previewChecks.length + " of " + result.checks.length + " checks are shown in this preview."}
               </p>
             </div>
             <span className="text-sm font-semibold text-brand-600">
@@ -160,7 +187,7 @@ function ResultsContent() {
           </div>
 
           <div className="mt-4 space-y-3">
-            {previewChecks.map((check) => (
+            {visibleChecks.map((check) => (
               <div
                 key={check.type}
                 className="flex items-start justify-between gap-4 rounded-xl border border-slate-100 p-4"
@@ -192,18 +219,31 @@ function ResultsContent() {
         </section>
 
         <div className="mt-8 rounded-2xl bg-brand-50 p-5 ring-1 ring-brand-100">
-          <p className="text-sm font-semibold text-slate-900">Finish this vehicle report</p>
-          <p className="mt-1 text-sm text-slate-600">
-            Unlock the remaining checks and the completed report template for this exact listing.
-            The displayed local price is an estimate; payment is only active after Stripe is configured.
+          <p className="text-sm font-semibold text-slate-900">
+            {paid ? "Report unlocked" : "Finish this vehicle report"}
           </p>
-          <Link
-            href={reportUrl}
-            className="mt-4 inline-flex rounded-full bg-brand-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-600"
-          >
-            Unlock complete report · {quote?.formattedAmount ?? "£9.99"}
-          </Link>
+          <p className="mt-1 text-sm text-slate-600">
+            {paid
+              ? "The paid Checkout session is linked to this listing. Provider-backed verification is still being connected."
+              : "Unlock the remaining checks and the completed report template for this exact listing. The displayed local price is an estimate; payment is only active after Stripe is configured."}
+          </p>
+          {paid ? (
+            <span className="mt-4 inline-flex rounded-full bg-emerald-100 px-5 py-2.5 text-sm font-semibold text-emerald-800">
+              Payment confirmed
+            </span>
+          ) : (
+            <Link
+              href={reportUrl}
+              className="mt-4 inline-flex rounded-full bg-brand-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-600"
+            >
+              Unlock complete report · {quote?.formattedAmount ?? "£9.99"}
+            </Link>
+          )}
         </div>
+
+        {paymentChecking && (
+          <p className="mt-4 text-center text-xs text-slate-500">Confirming your Stripe payment…</p>
+        )}
 
         <div className="mt-6 flex flex-wrap gap-3">
           <Link
