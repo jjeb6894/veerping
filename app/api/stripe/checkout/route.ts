@@ -72,6 +72,7 @@ export async function POST(request: Request) {
   const session = await stripe.checkout.sessions.create({
     mode: RECURRING_PLANS.has(plan) ? "subscription" : "payment",
     line_items: [{ price: priceId, quantity: 1 }],
+    allow_promotion_codes: true,
     success_url:
       body.successUrl ??
       "https://templatechecklist.com/results?checkout=success&session_id={CHECKOUT_SESSION_ID}",
