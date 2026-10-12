@@ -14,7 +14,7 @@ export function Hero() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-brand-500" />
             </span>
-            Vehicle report template · simulated checks
+            Vehicle listing intelligence · AutoTrader UK live extraction
           </span>
           <h1 className="mt-6 text-4xl font-bold leading-tight tracking-tight text-slate-900 md:text-5xl">
             Paste a car listing.
@@ -73,10 +73,10 @@ export function Hero() {
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-600">
                   Listing preview
                 </p>
-                <h2 className="mt-1 text-xl font-bold text-slate-900">Vehicle report template</h2>
+                <h2 className="mt-1 text-xl font-bold text-slate-900">Vehicle report</h2>
               </div>
               <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-600">
-                Sample
+                Awaiting link
               </span>
             </div>
 
@@ -119,8 +119,8 @@ export function Hero() {
             </div>
 
             <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4 text-xs text-slate-500">
-              <span>Preview only</span>
-              <span>No live verification yet</span>
+              <span>Ready for a listing</span>
+              <span>Source-backed details shown on report</span>
             </div>
           </div>
         </div>
