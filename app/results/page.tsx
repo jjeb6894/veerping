@@ -182,7 +182,7 @@ function ResultsContent() {
               </p>
             </div>
             <span className="text-sm font-semibold text-brand-600">
-              {quote?.formattedAmount ?? "£9.99"} to unlock
+              {paid ? "Paid report" : (quote?.formattedAmount ?? "£9.99") + " to unlock"}
             </span>
           </div>
 
@@ -197,7 +197,7 @@ function ResultsContent() {
                   <p className="mt-1 text-sm text-slate-600">{check.summary}</p>
                 </div>
                 <span className="shrink-0 rounded-full bg-emerald-50 px-3 py-1 text-sm font-semibold text-emerald-700">
-                  Preview
+                  {paid ? "Unlocked" : "Preview"}
                 </span>
               </div>
             ))}
