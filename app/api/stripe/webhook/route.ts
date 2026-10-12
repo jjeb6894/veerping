@@ -9,7 +9,7 @@ export async function POST(request: Request) {
 
   if (!secretKey || !webhookSecret || secretKey === "sk_test_placeholder") {
     return NextResponse.json(
-      { error: "Stripe webhook is not configured.", stubbed: true },
+      { error: "Stripe webhook is not connected on this deployment.", configured: false },
       { status: 501 }
     );
   }
@@ -22,7 +22,10 @@ export async function POST(request: Request) {
     const stripe = new Stripe(secretKey);
     const event = stripe.webhooks.constructEvent(payload, signature, webhookSecret);
 
-    if (event.type === "checkout.session.completed") {
+    if (
+      event.type === "checkout.session.completed" ||
+      event.type === "checkout.session.async_payment_succeeded"
+    ) {
       const session = event.data.object as Stripe.Checkout.Session;
       if (
         session.payment_status === "paid" &&
@@ -33,6 +36,14 @@ export async function POST(request: Request) {
           listingUrl: session.metadata.listingUrl ?? null,
         });
       }
+    }
+
+    if (event.type === "checkout.session.async_payment_failed") {
+      const session = event.data.object as Stripe.Checkout.Session;
+      console.warn("Vehicle report payment failed", {
+        sessionId: session.id,
+        listingUrl: session.metadata?.listingUrl ?? null,
+      });
     }
 
     return NextResponse.json({ received: true, eventType: event.type });
