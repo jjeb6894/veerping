@@ -19,9 +19,9 @@ const STEPS = [
   },
   {
     step: "4",
-    title: "Optional human validation",
+    title: "Unlock the full report",
     description:
-      "Manual reviews are not available in this prototype.",
+      "Unlock the remaining report sections through secure Stripe Checkout when payment is enabled.",
   },
 ];
 
