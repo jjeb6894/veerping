@@ -22,7 +22,7 @@ function SearchForm() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const grouped = useMemo(groupAdaptersByCategory, []);
+  const grouped = useMemo(() => groupAdaptersByCategory(), []);
 
   async function handlePasteSubmit(e: React.FormEvent) {
     e.preventDefault();

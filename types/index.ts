@@ -60,14 +60,37 @@ export type TrustTier = "insured" | "trusted" | "caution" | "risk";
 
 export interface ListingSnapshot {
   title?: string;
+  year?: string;
+  make?: string;
+  model?: string;
+  trim?: string;
   price?: string;
   mileage?: string;
+  vin?: string;
+  condition?: string;
   seller?: string;
   sellerRating?: string;
   location?: string;
   images?: string[];
-  sourceStatus: "extracted" | "unavailable" | "blocked";
+  listingUrl?: string;
+  sourceStatus: "extracted" | "unsupported" | "removed" | "blocked" | "javascript_required" | "parser_failed" | "required_data_unavailable";
   sourceMessage?: string;
+  diagnostics?: ListingDiagnostics;
+}
+
+export interface ListingDiagnostics {
+  requestedUrl: string;
+  finalUrl?: string;
+  httpStatus?: number;
+  responseHeaders?: Record<string, string>;
+  redirected?: boolean;
+  pageTitle?: string;
+  responseBytes?: number;
+  jsonLdFound?: boolean;
+  vehicleSchemaFound?: boolean;
+  javascriptRenderingUsed: boolean;
+  challengeDetected?: boolean;
+  fieldSources?: Record<string, string>;
 }
 
 export interface TrustScoreResult {

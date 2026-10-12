@@ -8,6 +8,7 @@
     "autotrader.co.uk"
   ],
   "urlPatterns": [
+    "autotrader\\.com/cars-for-sale/vehicle/[0-9]+",
     "autotrader\\.[a-z.]+/.*/details/",
     "autotrader\\.[a-z.]+/car-details/"
   ],

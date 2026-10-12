@@ -5,12 +5,21 @@ import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { ScoreGauge } from "@/components/ScoreGauge";
 import { TrustBadge } from "@/components/TrustBadge";
+import { ListingDetailsEditor } from "@/components/ListingDetailsEditor";
+import { cleanEnteredListing, type EnteredListing } from "@/lib/listing-input";
 import type { TrustScoreResult } from "@/types";
 
 type ReportQuote = {
   formattedAmount: string;
   currency: string;
 };
+
+function storedListingDetails(url: string | null): EnteredListing {
+  if (!url || typeof window === "undefined") return {};
+  try {
+    return cleanEnteredListing(JSON.parse(sessionStorage.getItem(`templatechecklist:listing:${url}`) ?? "null"));
+  } catch { return {}; }
+}
 
 function ResultsContent() {
   const searchParams = useSearchParams();
@@ -19,16 +28,14 @@ function ResultsContent() {
   const [result, setResult] = useState<TrustScoreResult | null>(null);
   const [quote, setQuote] = useState<ReportQuote | null>(null);
   const [paid, setPaid] = useState(false);
-  const [paymentChecking, setPaymentChecking] = useState(false);
+  const [paymentChecking, setPaymentChecking] = useState(Boolean(sessionId && url));
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [enteredByUrl, setEnteredByUrl] = useState<Record<string, EnteredListing>>(() =>
+    url ? { [url]: storedListingDetails(url) } : {});
 
   useEffect(() => {
-    if (!url) {
-      setError("No listing URL provided.");
-      setLoading(false);
-      return;
-    }
+    if (!url) return;
 
     let cancelled = false;
     (async () => {
@@ -66,7 +73,6 @@ function ResultsContent() {
   useEffect(() => {
     if (!sessionId || !url) return;
     let cancelled = false;
-    setPaymentChecking(true);
     fetch(`/api/stripe/session?session_id=${encodeURIComponent(sessionId)}&url=${encodeURIComponent(url)}`)
       .then((response) => (response.ok ? response.json() : null))
       .then((data) => {
@@ -81,7 +87,7 @@ function ResultsContent() {
     };
   }, [sessionId, url]);
 
-  if (loading) {
+  if (loading && url) {
     return (
       <div className="mx-auto max-w-3xl px-6 py-24 text-center text-slate-500">
         Preparing your empty report template…
@@ -92,7 +98,7 @@ function ResultsContent() {
   if (error || !result) {
     return (
       <div className="mx-auto max-w-3xl px-6 py-24 text-center">
-        <p className="text-lg font-semibold text-red-600">{error ?? "No result found."}</p>
+        <p className="text-lg font-semibold text-red-600">{!url ? "No listing URL provided." : error ?? "No result found."}</p>
         <Link href="/search" className="mt-4 inline-block text-brand-600 hover:underline">
           Try another link
         </Link>
@@ -105,8 +111,16 @@ function ResultsContent() {
   const lockedChecks = paid ? [] : result.checks.slice(previewCount);
   const visibleChecks = paid ? result.checks : previewChecks;
   const reportUrl = `/pricing?url=${encodeURIComponent(result.url)}`;
-  const listing = result.listing;
+  const entered = enteredByUrl[result.url] ?? {};
+  const hasEnteredDetails = Object.keys(entered).length > 0;
+  const listing = { ...result.listing, ...entered };
   const listingValue = (value?: string) => value ?? "Unavailable from listing";
+
+  function saveEnteredDetails(details: EnteredListing) {
+    setEnteredByUrl(previous => ({ ...previous, [result!.url]: details }));
+    try { sessionStorage.setItem(`templatechecklist:listing:${result!.url}`, JSON.stringify(details)); }
+    catch { /* The report still displays the details if browser storage is unavailable. */ }
+  }
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-16">
@@ -142,7 +156,7 @@ function ResultsContent() {
           <div className="flex items-end justify-between">
             <div>
               <h2 className="text-lg font-semibold text-slate-900">Listing details</h2>
-              <p className="mt-1 text-sm text-slate-500">Fields are filled from the listing when available.</p>
+              <p className="mt-1 text-sm text-slate-500">Fields come from the listing when available. You can supply missing details below.</p>
             </div>
             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
               Template
@@ -150,12 +164,14 @@ function ResultsContent() {
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             {[
-              ["Vehicle", listingValue(listing?.title)],
+              ["Vehicle", listingValue(listing?.title ?? ([listing?.year, listing?.make, listing?.model, listing?.trim].filter(Boolean).join(" ") || undefined))],
               ["Price", listingValue(listing?.price)],
               ["Mileage", listingValue(listing?.mileage)],
               ["Seller", listingValue(listing?.seller)],
               ["Seller rating", listingValue(listing?.sellerRating)],
               ["Location", listingValue(listing?.location)],
+              ...(listing?.vin ? [["VIN", listing.vin]] : []),
+              ...(listing?.condition ? [["Condition", listing.condition]] : []),
             ].map(([field, value]) => (
               <div key={field} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{field}</p>
@@ -164,13 +180,27 @@ function ResultsContent() {
             ))}
           </div>
           <p className="mt-3 text-xs text-slate-500">
-            {listing?.sourceStatus === "extracted"
-              ? "Details were read from the public AutoTrader page metadata."
+            {hasEnteredDetails
+              ? "Some details were entered by you and have not been verified against the listing. " + (result.listing?.sourceMessage ?? "")
+              : listing?.sourceStatus === "extracted"
+              ? "Details were read from the public listing page metadata."
               : listing?.sourceMessage ?? "The source did not provide readable listing details."}
           </p>
           <p className="mt-2 text-xs text-slate-500">
             Seller ratings are shown only when the submitted source provides them; unavailable ratings stay clearly marked.
           </p>
+          {result.platformId === "autotrader" && (
+            <>
+              <a href={result.url} target="_blank" rel="noopener noreferrer"
+                className="mt-4 inline-block text-sm font-medium text-brand-700 underline">
+                Open the original AutoTrader listing
+              </a>
+              <ListingDetailsEditor key={result.url} initial={{
+                title: listing.title, price: listing.price, mileage: listing.mileage,
+                seller: listing.seller, location: listing.location, vin: listing.vin,
+              }} onSave={saveEnteredDetails} />
+            </>
+          )}
         </section>
 
         {(listing?.images?.length ?? 0) > 0 && (
