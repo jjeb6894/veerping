@@ -63,6 +63,7 @@ export interface ListingSnapshot {
   price?: string;
   mileage?: string;
   seller?: string;
+  sellerRating?: string;
   location?: string;
   images?: string[];
   sourceStatus: "extracted" | "unavailable" | "blocked";
@@ -198,3 +199,4 @@ export interface ClaimSubmission {
   description: string;
   status?: "pending" | "reviewing" | "approved" | "denied";
 }
+

@@ -87,6 +87,9 @@ function SearchForm() {
         </button>
       </form>
       {error && <p className="mt-3 text-sm font-medium text-red-600">{error}</p>}
+      <p className="mt-3 text-xs leading-5 text-slate-500">
+        After you submit, listing details and seller ratings are shown only when the source provides them. Missing fields stay marked as unavailable.
+      </p>
 
       <div className="mt-14">
         <div className="flex items-center justify-between">
@@ -147,3 +150,4 @@ export default function SearchPage() {
     </Suspense>
   );
 }
+

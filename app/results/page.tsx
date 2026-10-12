@@ -154,6 +154,7 @@ function ResultsContent() {
               ["Price", listingValue(listing?.price)],
               ["Mileage", listingValue(listing?.mileage)],
               ["Seller", listingValue(listing?.seller)],
+              ["Seller rating", listingValue(listing?.sellerRating)],
               ["Location", listingValue(listing?.location)],
             ].map(([field, value]) => (
               <div key={field} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
@@ -166,6 +167,9 @@ function ResultsContent() {
             {listing?.sourceStatus === "extracted"
               ? "Details were read from the public AutoTrader page metadata."
               : listing?.sourceMessage ?? "The source did not provide readable listing details."}
+          </p>
+          <p className="mt-2 text-xs text-slate-500">
+            Seller ratings are shown only when the submitted source provides them; unavailable ratings stay clearly marked.
           </p>
         </section>
 
@@ -283,3 +287,4 @@ export default function ResultsPage() {
     </Suspense>
   );
 }
+
