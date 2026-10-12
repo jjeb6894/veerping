@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { CountryBrandBackdrop } from "@/components/CountryBrandBackdrop";
+import { LogoBubble } from "@/components/LogoBubble";
+import { ADAPTERS, adapterLogoDomain } from "@/lib/adapters";
 
 export function Hero() {
   return (
@@ -23,7 +25,23 @@ export function Hero() {
             Results and activity shown here are simulated; no listings are verified and no
             insurance coverage is offered.
           </p>
-          <div className="mt-8 flex flex-wrap items-center gap-4">
+          <div className="mt-8 rounded-2xl border border-white/80 bg-white/70 p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+              Example platforms
+            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-2" aria-label="Example marketplace platforms">
+              {ADAPTERS.map((adapter) => (
+                <span
+                  key={adapter.id}
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-100 bg-white px-3 py-2 text-xs font-medium text-slate-600"
+                >
+                  <LogoBubble name={adapter.name} domain={adapterLogoDomain(adapter)} size={22} />
+                  <span className="hidden sm:inline">{adapter.name}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+          <div className="mt-6 flex flex-wrap items-center gap-4">
             <Link
               href="/search"
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-brand-500 px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
