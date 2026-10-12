@@ -44,7 +44,7 @@ export function Footer() {
         </div>
       </div>
       <div className="border-t border-slate-100 py-4 text-center text-xs text-slate-400">
-        © {new Date().getFullYear()} TemplateChecklist.com. Prototype results are simulated.
+        © {new Date().getFullYear()} TemplateChecklist.com. Some provider checks may be unavailable until their data source is connected.
       </div>
     </footer>
   );
