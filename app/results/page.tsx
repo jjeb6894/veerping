@@ -105,6 +105,8 @@ function ResultsContent() {
   const lockedChecks = paid ? [] : result.checks.slice(previewCount);
   const visibleChecks = paid ? result.checks : previewChecks;
   const reportUrl = `/pricing?url=${encodeURIComponent(result.url)}`;
+  const listing = result.listing;
+  const listingValue = (value?: string) => value ?? "Unavailable from listing";
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-16">
@@ -147,24 +149,40 @@ function ResultsContent() {
             </span>
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {["Vehicle", "Price", "Mileage", "Seller"].map((field) => (
-              <div key={field} className="rounded-xl border border-dashed border-slate-200 p-4">
+            {[
+              ["Vehicle", listingValue(listing?.title)],
+              ["Price", listingValue(listing?.price)],
+              ["Mileage", listingValue(listing?.mileage)],
+              ["Seller", listingValue(listing?.seller)],
+              ["Location", listingValue(listing?.location)],
+            ].map(([field, value]) => (
+              <div key={field} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{field}</p>
-                <p className="mt-2 text-sm font-medium text-slate-500">Awaiting listing data</p>
+                <p className="mt-2 text-sm font-medium text-slate-700">{value}</p>
               </div>
             ))}
           </div>
+          <p className="mt-3 text-xs text-slate-500">
+            {listing?.sourceStatus === "extracted"
+              ? "Details were read from the public AutoTrader page metadata."
+              : listing?.sourceMessage ?? "The source did not provide readable listing details."}
+          </p>
         </section>
 
-        {result.photoUrl && (
+        {(listing?.images?.length ?? 0) > 0 && (
           <figure className="mt-6 overflow-hidden rounded-2xl border border-slate-100 bg-slate-50">
-            <img
-              src={result.photoUrl}
-              alt={`Vehicle preview from the ${result.platformName} listing`}
-              className="max-h-[420px] w-full object-cover"
-            />
+            <div className="grid gap-2 sm:grid-cols-2">
+              {listing?.images?.slice(0, 4).map((image, index) => (
+                <img
+                  key={image}
+                  src={image}
+                  alt={`Vehicle photo ${index + 1} from the ${result.platformName} listing`}
+                  className="h-56 w-full object-cover"
+                />
+              ))}
+            </div>
             <figcaption className="px-4 py-2 text-xs text-slate-500">
-              Photo preview from the listing source; not independently verified.
+              Photos supplied by the listing source; not independently verified.
             </figcaption>
           </figure>
         )}

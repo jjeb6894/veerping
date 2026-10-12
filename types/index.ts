@@ -58,6 +58,17 @@ export interface CheckResult {
 
 export type TrustTier = "insured" | "trusted" | "caution" | "risk";
 
+export interface ListingSnapshot {
+  title?: string;
+  price?: string;
+  mileage?: string;
+  seller?: string;
+  location?: string;
+  images?: string[];
+  sourceStatus: "extracted" | "unavailable" | "blocked";
+  sourceMessage?: string;
+}
+
 export interface TrustScoreResult {
   id: string;
   url: string;
@@ -67,6 +78,7 @@ export interface TrustScoreResult {
   tier: TrustTier;
   tierLabel: string;
   checks: CheckResult[];
+  listing?: ListingSnapshot;
   photoUrl?: string;
   createdAt: string;
 }
