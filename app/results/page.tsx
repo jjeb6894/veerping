@@ -249,7 +249,7 @@ function ResultsContent() {
                   <p className="mt-1 text-sm text-slate-600">{check.summary}</p>
                 </div>
                 <span className="shrink-0 rounded-full bg-emerald-50 px-3 py-1 text-sm font-semibold text-emerald-700">
-                  {paid ? "Unlocked" : "Preview"}
+                  {paid ? "Unlocked" : "Free"}
                 </span>
               </div>
             ))}
