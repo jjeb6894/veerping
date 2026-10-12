@@ -137,7 +137,7 @@ function ResultsContent() {
             <h1 className="mt-2 text-2xl font-bold text-slate-900">{result.platformName} listing</h1>
             <p className="mt-1 max-w-sm truncate text-sm text-slate-500">{result.url}</p>
             <div className="mt-4">
-              <TrustBadge tier={result.tier} label={paid ? "Unlocked" : "Preview only"} size="lg" />
+              <TrustBadge tier={result.tier} label={paid ? "Unlocked" : "Free preview"} size="lg" />
             </div>
           </div>
           <div className="text-center">
