@@ -94,6 +94,18 @@ function formatMileage(value: unknown, unit: unknown): string | undefined {
   return number.toLocaleString("en-GB") + " " + (normalizedUnit?.includes("km") ? "km" : "miles");
 }
 
+function formatSellerRating(value: unknown): string | undefined {
+  if (!value || typeof value !== "object") return cleanText(value);
+  const record = value as Record<string, unknown>;
+  const rating = cleanText(record.ratingValue ?? record.value);
+  if (!rating) return undefined;
+  const best = cleanText(record.bestRating);
+  const count = cleanText(record.reviewCount ?? record.ratingCount);
+  return [best ? `${rating}/${best}` : rating, count ? `${count} ratings` : undefined]
+    .filter(Boolean)
+    .join(" · ");
+}
+
 function jsonLdDocuments(html: string): unknown[] {
   const documents: unknown[] = [];
   for (const match of html.matchAll(/<script\b[^>]*type\s*=\s*["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
@@ -231,6 +243,9 @@ export async function fetchAutoTraderUkListing(listingUrl: string): Promise<List
   const sellerName =
     textFromRecord(seller, "name") ??
     metaValue(html, "author");
+  const sellerRating = formatSellerRating(
+    sellerRecord?.aggregateRating ?? listingRecord?.aggregateRating,
+  );
   const location =
     cleanText(address?.addressLocality) ??
     cleanText(address?.addressRegion) ??
@@ -241,6 +256,7 @@ export async function fetchAutoTraderUkListing(listingUrl: string): Promise<List
     price,
     mileage: mileageText,
     seller: sellerName,
+    sellerRating,
     location,
     images,
     sourceStatus: title || price || mileageText || sellerName || location || images.length
@@ -253,3 +269,4 @@ export async function fetchAutoTraderUkListing(listingUrl: string): Promise<List
   }
   return listing;
 }
+
