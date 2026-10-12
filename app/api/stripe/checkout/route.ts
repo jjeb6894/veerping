@@ -53,16 +53,23 @@ export async function POST(request: Request) {
     );
   }
 
-  const metadata: Record<string, string> = { plan, currency };
+  const metadata: Record<string, string> = {
+    plan,
+    currency,
+    product: "vehicle-report-unlock",
+  };
   if (body.url) metadata.listingUrl = body.url;
 
   const stripe = new Stripe(secretKey);
   const session = await stripe.checkout.sessions.create({
     mode: RECURRING_PLANS.has(plan) ? "subscription" : "payment",
     line_items: [{ price: priceId, quantity: 1 }],
-    success_url: body.successUrl ?? "https://templatechecklist.com/results?checkout=success",
+    success_url:
+      body.successUrl ??
+      "https://templatechecklist.com/results?checkout=success&session_id={CHECKOUT_SESSION_ID}",
     cancel_url: body.cancelUrl ?? "https://templatechecklist.com/pricing?checkout=cancelled",
     metadata,
+    client_reference_id: body.url ? "vehicle-report:" + body.url : undefined,
   });
 
   return NextResponse.json({ url: session.url });
