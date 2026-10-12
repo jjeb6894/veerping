@@ -28,7 +28,7 @@ function SearchForm() {
     e.preventDefault();
     setError(null);
     if (!url.trim()) {
-      setError("Paste a listing or profile URL first.");
+      setError("Paste a car listing URL first.");
       return;
     }
     setLoading(true);
@@ -40,13 +40,13 @@ function SearchForm() {
       });
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as { error?: string };
-        setError(data.error ?? "Could not check that link.");
+        setError(data.error ?? "Could not prepare that listing.");
         setLoading(false);
         return;
       }
       router.push(`/results?url=${encodeURIComponent(url)}`);
     } catch {
-      setError("Something went wrong running the Trust Check. Please try again.");
+      setError("Something went wrong preparing the report. Please try again.");
       setLoading(false);
     }
   }
@@ -57,9 +57,13 @@ function SearchForm() {
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-16">
-      <h1 className="text-3xl font-bold text-slate-900">Run a Trust Check</h1>
-      <p className="mt-2 text-slate-600">
-        Paste a link to any supported listing or profile, or search below to see what we support.
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">
+        Vehicle report template
+      </p>
+      <h1 className="mt-2 text-3xl font-bold text-slate-900">Paste a listing link</h1>
+      <p className="mt-2 max-w-2xl text-slate-600">
+        Start with an AutoTrader UK or US car listing. We’ll create an empty report template,
+        fill in the details we can read, and leave the remaining verification ready to unlock.
       </p>
 
       <BrandLetterCycle />
@@ -70,8 +74,8 @@ function SearchForm() {
           required
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          aria-label="Car listing or profile link"
-          placeholder="Paste a car listing link, e.g. https://www.autotrader.com/cars-for-sale/..."
+          aria-label="Car listing link"
+          placeholder="https://www.autotrader.co.uk/car-details/…"
           className="flex-1 rounded-xl border border-slate-200 px-4 py-3 text-sm shadow-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
         />
         <button
@@ -79,14 +83,14 @@ function SearchForm() {
           disabled={loading}
           className="rounded-xl bg-brand-500 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600 disabled:opacity-60"
         >
-          {loading ? "Checking…" : "Check trust score"}
+          {loading ? "Preparing preview…" : "Build report preview"}
         </button>
       </form>
       {error && <p className="mt-3 text-sm font-medium text-red-600">{error}</p>}
 
       <div className="mt-14">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-900">Or browse supported platforms</h2>
+          <h2 className="text-lg font-semibold text-slate-900">Supported sources</h2>
           <input
             type="search"
             placeholder="Search platforms…"
