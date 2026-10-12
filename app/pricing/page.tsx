@@ -26,7 +26,7 @@ function CheckoutButton({ url, quote }: { url: string; quote: ReportQuote | null
           plan: "one-off-check",
           currency: quote?.currency ?? "USD",
           url,
-          successUrl: `${origin}/results?url=${encodeURIComponent(url)}&paid=1`,
+          successUrl: `${origin}/results?url=${encodeURIComponent(url)}&session_id={CHECKOUT_SESSION_ID}`,
           cancelUrl: `${origin}/pricing?url=${encodeURIComponent(url)}&checkout=cancelled`,
         }),
       });
