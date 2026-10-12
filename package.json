@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "test": "node --experimental-strip-types tests/listing-parser.test.mjs",
     "typecheck": "tsc --noEmit",
     "worker:build": "opennextjs-cloudflare build",
     "preview": "npm run worker:build && opennextjs-cloudflare preview",

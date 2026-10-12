@@ -19,16 +19,12 @@ function ResultsContent() {
   const [result, setResult] = useState<TrustScoreResult | null>(null);
   const [quote, setQuote] = useState<ReportQuote | null>(null);
   const [paid, setPaid] = useState(false);
-  const [paymentChecking, setPaymentChecking] = useState(false);
+  const [paymentChecking, setPaymentChecking] = useState(Boolean(sessionId && url));
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!url) {
-      setError("No listing URL provided.");
-      setLoading(false);
-      return;
-    }
+    if (!url) return;
 
     let cancelled = false;
     (async () => {
@@ -66,7 +62,6 @@ function ResultsContent() {
   useEffect(() => {
     if (!sessionId || !url) return;
     let cancelled = false;
-    setPaymentChecking(true);
     fetch(`/api/stripe/session?session_id=${encodeURIComponent(sessionId)}&url=${encodeURIComponent(url)}`)
       .then((response) => (response.ok ? response.json() : null))
       .then((data) => {
@@ -81,7 +76,7 @@ function ResultsContent() {
     };
   }, [sessionId, url]);
 
-  if (loading) {
+  if (loading && url) {
     return (
       <div className="mx-auto max-w-3xl px-6 py-24 text-center text-slate-500">
         Preparing your empty report template…
@@ -92,7 +87,7 @@ function ResultsContent() {
   if (error || !result) {
     return (
       <div className="mx-auto max-w-3xl px-6 py-24 text-center">
-        <p className="text-lg font-semibold text-red-600">{error ?? "No result found."}</p>
+        <p className="text-lg font-semibold text-red-600">{!url ? "No listing URL provided." : error ?? "No result found."}</p>
         <Link href="/search" className="mt-4 inline-block text-brand-600 hover:underline">
           Try another link
         </Link>
@@ -150,12 +145,14 @@ function ResultsContent() {
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             {[
-              ["Vehicle", listingValue(listing?.title)],
+              ["Vehicle", listingValue(listing?.title ?? ([listing?.year, listing?.make, listing?.model, listing?.trim].filter(Boolean).join(" ") || undefined))],
               ["Price", listingValue(listing?.price)],
               ["Mileage", listingValue(listing?.mileage)],
               ["Seller", listingValue(listing?.seller)],
               ["Seller rating", listingValue(listing?.sellerRating)],
               ["Location", listingValue(listing?.location)],
+              ...(listing?.vin ? [["VIN", listing.vin]] : []),
+              ...(listing?.condition ? [["Condition", listing.condition]] : []),
             ].map(([field, value]) => (
               <div key={field} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{field}</p>
@@ -165,7 +162,7 @@ function ResultsContent() {
           </div>
           <p className="mt-3 text-xs text-slate-500">
             {listing?.sourceStatus === "extracted"
-              ? "Details were read from the public AutoTrader page metadata."
+              ? "Details were read from the public listing page metadata."
               : listing?.sourceMessage ?? "The source did not provide readable listing details."}
           </p>
           <p className="mt-2 text-xs text-slate-500">

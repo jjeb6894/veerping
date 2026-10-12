@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { detectPlatform } from "@/lib/adapters";
-import { fetchAutoTraderUkListing } from "@/lib/listing-parser";
+import { fetchAutoTraderListing } from "@/lib/listing-parser";
 import { aggregateScore, runCheckPipeline, tierForScore } from "@/lib/scoring";
 import type { TrustScoreResult } from "@/types";
 
 /**
  * Prepare a reusable report preview for a pasted listing URL.
  *
- * AutoTrader UK pages are read from their public HTML metadata so the preview
+ * AutoTrader pages are read from their public HTML metadata so the preview
  * can show the vehicle details and photos that the source exposes. The trust
  * checks remain clearly labelled as simulated until provider integrations are
  * connected.
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
   }
 
   const listing = adapter.id === "autotrader"
-    ? await fetchAutoTraderUkListing(url)
+    ? await fetchAutoTraderListing(url)
     : undefined;
   const checks = runCheckPipeline(url, adapter.checks);
   const score = aggregateScore(checks);
