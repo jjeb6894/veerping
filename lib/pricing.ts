@@ -70,3 +70,68 @@ export function estimateProfitLift(
   const extraCents = Math.round(listingPriceCents * (upliftPercent / 100));
   return { upliftPercent: Math.round(upliftPercent * 10) / 10, extraCents };
 }
+
+
+export type ReportCurrency = "GBP" | "EUR" | "USD" | "CAD" | "AUD";
+
+export type ReportQuote = {
+  countryCode: string;
+  currency: ReportCurrency;
+  amountMinor: number;
+  formattedAmount: string;
+  displayOnly: true;
+};
+
+const EURO_COUNTRIES = new Set([
+  "AT", "BE", "CY", "DE", "EE", "ES", "FI", "FR", "GR", "IE", "IT", "LT",
+  "LU", "LV", "MT", "NL", "PT", "SI", "SK",
+]);
+
+const CURRENCY_BY_COUNTRY: Record<string, ReportCurrency> = {
+  GB: "GBP",
+  CA: "CAD",
+  AU: "AUD",
+};
+
+export function countryCodeFromRequest(request: Request) {
+  return (
+    request.headers.get("cf-ipcountry") ??
+    request.headers.get("x-vercel-ip-country") ??
+    request.headers.get("x-country-code") ??
+    "US"
+  ).toUpperCase();
+}
+
+export function currencyForCountry(countryCode: string): ReportCurrency {
+  const code = countryCode.toUpperCase();
+  if (EURO_COUNTRIES.has(code)) return "EUR";
+  return CURRENCY_BY_COUNTRY[code] ?? "USD";
+}
+
+export function reportQuote(countryCode: string): ReportQuote {
+  const currency = currencyForCountry(countryCode);
+  const amountMinor = 999;
+  const locale =
+    currency === "GBP"
+      ? "en-GB"
+      : currency === "EUR"
+        ? "de-DE"
+        : currency === "CAD"
+          ? "en-CA"
+          : currency === "AUD"
+            ? "en-AU"
+            : "en-US";
+
+  return {
+    countryCode: countryCode.toUpperCase(),
+    currency,
+    amountMinor,
+    formattedAmount: new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amountMinor / 100),
+    displayOnly: true,
+  };
+}
