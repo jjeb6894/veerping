@@ -18,6 +18,36 @@ const proofPoints = [
   "Privacy-first. No spam. Just results",
 ];
 
+const marketplacePreviews = [
+  {
+    name: "Facebook Marketplace",
+    domain: "facebook.com",
+    title: "Used family SUV",
+    detail: "Local seller · sample listing",
+    price: "£8,950",
+    rating: "Seller rating: not provided",
+    tone: "from-blue-100 via-sky-50 to-indigo-100",
+  },
+  {
+    name: "Gumtree",
+    domain: "gumtree.com",
+    title: "2018 city hatchback",
+    detail: "Private seller · sample listing",
+    price: "£5,400",
+    rating: "Seller rating: shown when available",
+    tone: "from-emerald-100 via-lime-50 to-teal-100",
+  },
+  {
+    name: "eBay",
+    domain: "ebay.com",
+    title: "Refurbished tech bundle",
+    detail: "Business seller · sample listing",
+    price: "£249",
+    rating: "Seller rating: shown when available",
+    tone: "from-amber-100 via-orange-50 to-rose-100",
+  },
+];
+
 export default function HomePage() {
   return (
     <div className="bg-white">
@@ -66,6 +96,43 @@ export default function HomePage() {
               </span>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-6 py-14">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">Listing context</p>
+            <h2 className="mt-2 text-2xl font-bold text-slate-900 sm:text-3xl">See the source before you submit</h2>
+          </div>
+          <p className="max-w-md text-sm leading-6 text-slate-500">
+            These are illustrative previews. We show seller ratings only when the submitted marketplace makes them available.
+          </p>
+        </div>
+        <div className="mt-7 grid gap-5 md:grid-cols-3">
+          {marketplacePreviews.map((preview) => (
+            <article key={preview.name} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div className={`relative h-32 overflow-hidden bg-gradient-to-br ${preview.tone}`}>
+                <div className="absolute -bottom-5 left-8 h-20 w-36 rounded-[48%] bg-white/70 shadow-lg" />
+                <div className="absolute bottom-4 left-16 h-10 w-16 rounded-[48%] bg-slate-700/70" />
+                <span className="absolute right-3 top-3 rounded-full bg-white/80 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
+                  Sample preview
+                </span>
+              </div>
+              <div className="p-4">
+                <div className="flex items-center gap-2">
+                  <LogoBubble name={preview.name} domain={preview.domain} size={26} shape="square" />
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{preview.name}</p>
+                </div>
+                <h3 className="mt-3 text-base font-bold text-slate-900">{preview.title}</h3>
+                <p className="mt-1 text-xs text-slate-500">{preview.detail}</p>
+                <div className="mt-4 flex items-end justify-between gap-3">
+                  <span className="text-sm font-bold text-slate-900">{preview.price}</span>
+                  <span className="text-right text-[11px] font-medium text-slate-500">{preview.rating}</span>
+                </div>
+              </div>
+            </article>
+          ))}
         </div>
       </section>
 
@@ -121,3 +188,4 @@ export default function HomePage() {
     </div>
   );
 }
+
