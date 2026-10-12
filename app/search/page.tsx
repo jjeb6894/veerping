@@ -70,7 +70,8 @@ function SearchForm() {
           required
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          placeholder="https://www.ebay.com/itm/..."
+          aria-label="Car listing or profile link"
+          placeholder="Paste a car listing link, e.g. https://www.autotrader.com/cars-for-sale/..."
           className="flex-1 rounded-xl border border-slate-200 px-4 py-3 text-sm shadow-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
         />
         <button
