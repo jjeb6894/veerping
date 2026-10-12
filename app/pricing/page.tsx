@@ -32,7 +32,7 @@ function CheckoutButton({ url, quote }: { url: string; quote: ReportQuote | null
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok || !data.url) {
-        setError(data.error ?? "Checkout is not configured yet.");
+        setError(data.error ?? "Checkout is not available yet.");
         return;
       }
       window.location.assign(data.url);
@@ -94,8 +94,7 @@ function PricingContent() {
             {quote?.formattedAmount ?? "£9.99"}
           </p>
           <p className="mt-2 text-xs text-slate-500">
-            Displayed from your detected country. The final currency and amount must be configured
-            in Stripe before a payment can be collected.
+            The currency is selected from your detected country. Stripe applies the live price for that currency at checkout.
           </p>
         </div>
 
@@ -116,8 +115,7 @@ function PricingContent() {
           <CheckoutButton url={url} quote={quote} />
         </div>
         <p className="mt-4 text-center text-xs text-slate-500">
-          Checkout is currently in setup mode, so no charge will be made until your Stripe prices
-          and secret are connected.
+          Stripe Checkout handles payment securely. If checkout is unavailable, billing still needs to be connected on the deployment.
         </p>
       </div>
     </div>
