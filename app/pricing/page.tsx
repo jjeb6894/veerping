@@ -115,7 +115,7 @@ function PricingContent() {
           <CheckoutButton url={url} quote={quote} />
         </div>
         <p className="mt-3 text-center text-sm text-emerald-700">
-          Use code <span className="font-bold">LISTING20</span> in Stripe Checkout for 20% off if you came from one of the listed partner audiences.
+          Use code <span className="font-bold">LISTING20</span> in Stripe Checkout for 20% off if you came from one of the listed audiences.
         </p>
         <p className="mt-4 text-center text-xs text-slate-500">
           Stripe Checkout handles payment securely. If checkout is unavailable, billing still needs to be connected on the deployment.
