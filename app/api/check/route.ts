@@ -18,7 +18,7 @@ export async function POST(request: Request) {
   const url = body.url?.trim();
 
   if (!url) {
-    return NextResponse.json({ error: "Missing \`url\` in request body." }, { status: 400 });
+    return NextResponse.json({ error: "Missing url in request body." }, { status: 400 });
   }
 
   const adapter = detectPlatform(url);
