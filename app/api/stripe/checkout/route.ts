@@ -2,11 +2,17 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
 const FALLBACK_PRICE_IDS: Record<string, string> = {
-  "one-off-check": "price_REPLACE_ONE_OFF_CHECK",
+  "one-off-check": "price_1UPgSy0sal1TIs1TeLoZ9Iib",
   "human-validation": "price_REPLACE_HUMAN_VALIDATION",
   "seller-starter": "price_REPLACE_SELLER_STARTER",
   "seller-pro": "price_REPLACE_SELLER_PRO",
   "seller-business": "price_REPLACE_SELLER_BUSINESS",
+};
+
+const LIVE_ONE_OFF_PRICE_IDS: Record<string, string> = {
+  GBP: "price_1UPgSc0sal1TIs1TaOjvkfpP",
+  EUR: "price_1UPgRf0sal1TIs1TIb42Hzgz",
+  USD: "price_1UPgSy0sal1TIs1TeLoZ9Iib",
 };
 
 const ONE_OFF_PRICE_ENV: Record<string, string> = {
@@ -32,7 +38,9 @@ export async function POST(request: Request) {
   const currency = body.currency?.toUpperCase() ?? "USD";
   const priceId =
     plan === "one-off-check"
-      ? process.env[ONE_OFF_PRICE_ENV[currency] ?? ""] ?? FALLBACK_PRICE_IDS[plan]
+      ? process.env[ONE_OFF_PRICE_ENV[currency] ?? ""] ??
+        LIVE_ONE_OFF_PRICE_IDS[currency] ??
+        FALLBACK_PRICE_IDS[plan]
       : plan
         ? FALLBACK_PRICE_IDS[plan]
         : undefined;
@@ -46,8 +54,8 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error:
-          "Checkout is not configured yet. Add STRIPE_SECRET_KEY and a Stripe Price ID for the selected currency.",
-        stubbed: true,
+          "Stripe checkout needs a live STRIPE_SECRET_KEY and a configured price for this plan.",
+        configured: false,
       },
       { status: 501 }
     );
@@ -64,6 +72,7 @@ export async function POST(request: Request) {
   const session = await stripe.checkout.sessions.create({
     mode: RECURRING_PLANS.has(plan) ? "subscription" : "payment",
     line_items: [{ price: priceId, quantity: 1 }],
+    allow_promotion_codes: true,
     success_url:
       body.successUrl ??
       "https://templatechecklist.com/results?checkout=success&session_id={CHECKOUT_SESSION_ID}",

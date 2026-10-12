@@ -128,14 +128,14 @@ function ResultsContent() {
           </div>
           <div className="text-center">
             <ScoreGauge score={result.score} tier={result.tier} />
-            <p className="mt-2 text-xs text-slate-500">Simulated preview score</p>
+            <p className="mt-2 text-xs text-slate-500">Preview score</p>
           </div>
         </div>
 
         <div className="mt-6 rounded-2xl bg-amber-50 p-4 text-sm text-amber-900 ring-1 ring-amber-100">
           {paid
-            ? "Payment confirmed. This prototype still labels its checks as simulated until live provider integrations are connected."
-            : "This page is a reusable template. Vehicle facts, history, and trust signals remain unverified until the complete report is unlocked."}
+            ? "Payment confirmed. Some provider-backed checks may remain unavailable until their data source is connected."
+            : "This report starts with the listing data we can read. Remaining provider checks are shown as unavailable until the complete report is unlocked."}
         </div>
 
         <section className="mt-6">
@@ -242,8 +242,8 @@ function ResultsContent() {
           </p>
           <p className="mt-1 text-sm text-slate-600">
             {paid
-              ? "The paid Checkout session is linked to this listing. Provider-backed verification is still being connected."
-              : "Unlock the remaining checks and the completed report template for this exact listing. The displayed local price is an estimate; payment is only active after Stripe is configured."}
+              ? "The paid Checkout session is linked to this listing. The report keeps provider-backed results separate from source listing data."
+              : "Unlock the remaining checks and the completed report template for this exact listing. The displayed local price is an estimate; payment opens Stripe Checkout when live billing is configured."}
           </p>
           {paid ? (
             <span className="mt-4 inline-flex rounded-full bg-emerald-100 px-5 py-2.5 text-sm font-semibold text-emerald-800">

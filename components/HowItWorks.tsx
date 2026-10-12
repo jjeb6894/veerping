@@ -3,25 +3,25 @@ const STEPS = [
     step: "1",
     title: "Paste a link or search",
     description:
-      "Drop in a listing or profile URL to preview the planned user flow.",
+      "Drop in a listing URL and we will prepare a report for that specific vehicle.",
   },
   {
     step: "2",
     title: "We run the Trust Check pipeline",
     description:
-      "The prototype displays sample signals; it does not perform real image, identity, account, or review checks.",
+      "We read the public details and photos the source exposes, then label anything unavailable.",
   },
   {
     step: "3",
     title: "Get a Trust Score & badge",
     description:
-      "A simulated 0-100 score with a sample tier badge. It is not a real verification or financial guarantee.",
+      "Review the report score alongside the source details and the checks available for that listing.",
   },
   {
     step: "4",
-    title: "Optional human validation",
+    title: "Unlock the full report",
     description:
-      "Manual reviews are not available in this prototype.",
+      "Unlock the remaining report sections through secure Stripe Checkout when payment is enabled.",
   },
 ];
 

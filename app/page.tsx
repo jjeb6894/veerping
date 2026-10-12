@@ -42,6 +42,9 @@ export default function HomePage() {
             <Link href="/search" className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-brand-700">⌕ Check a Listing</Link>
             <Link href="/search" className="inline-flex items-center gap-2 rounded-lg border border-emerald-500 bg-white px-6 py-3 text-sm font-semibold text-emerald-700 shadow-sm transition hover:bg-emerald-50">♢ Get My Listing Trusted</Link>
           </div>
+          <div className="mx-auto mt-4 max-w-2xl rounded-lg border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+            <strong>20% off your vehicle report</strong> with code <span className="font-bold tracking-wide">LISTING20</span> for users from Wells Fargo, bet365, AutoTrader UK, mobile.de, HSBC, Middlesea Insurance, Revolut, Wise, and Nestlé.
+          </div>
           <div className="mx-auto mt-8 grid max-w-5xl divide-y rounded-xl border border-slate-200 bg-white text-left shadow-sm sm:grid-cols-4 sm:divide-x sm:divide-y-0">
             {[
               ["2.4M+", "listings checked"],
