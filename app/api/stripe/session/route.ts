@@ -13,7 +13,7 @@ export async function GET(request: Request) {
   const secretKey = process.env.STRIPE_SECRET_KEY;
   if (!secretKey || secretKey === "sk_test_placeholder") {
     return NextResponse.json(
-      { error: "Stripe is not configured yet.", paid: false, stubbed: true },
+      { error: "Stripe checkout is not connected on this deployment.", paid: false, configured: false },
       { status: 501 }
     );
   }
