@@ -4,16 +4,16 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://verticified.com"),
-  title: "TrustLink — Get trusted. Get certified.",
+  metadataBase: new URL("https://templatechecklist.com"),
+  title: "TemplateChecklist.com — Check Any Listing in Seconds",
   description:
-    "TrustLink is building a trust-check platform for marketplace listings and profiles. This prototype uses simulated results; listings are not verified and no insurance coverage is provided.",
+    "Prepare a clear listing report preview with vehicle details, VIN checks, seller signals, and a trust score.",
   openGraph: {
-    title: "TrustLink — Get trusted. Get certified.",
+    title: "TemplateChecklist.com — Check Any Listing in Seconds",
     description:
-      "Explore the TrustLink prototype. Results are simulated; listings are not verified and no insurance coverage is provided.",
-    url: "https://verticified.com/",
-    siteName: "TrustLink",
+      "Prepare a clear listing report preview before you buy or sell.",
+    url: "https://templatechecklist.com/",
+    siteName: "TemplateChecklist.com",
     type: "website",
   },
 };
@@ -25,10 +25,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Navbar />
         <aside
           role="status"
-          className="border-b border-amber-300 bg-amber-50 px-4 py-3 text-center text-sm font-medium text-amber-950"
+          className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-center text-xs font-medium text-amber-950"
         >
-          Prototype: results are simulated. Listings are not verified; no insurance, claims,
-          human reviews, or payments are available.
+          Prototype: results are simulated. Listings are not verified; no insurance, claims, human
+          reviews, or payments are available.
         </aside>
         <main className="flex-1">{children}</main>
         <Footer />
