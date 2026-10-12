@@ -26,15 +26,15 @@ export function Hero() {
           <div className="mt-8 flex flex-wrap items-center gap-4">
             <Link
               href="/search"
-              className="rounded-full bg-brand-500 px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-brand-600"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-brand-500 px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
             >
-              Run a Trust Check
+              Request my listing <span aria-hidden="true">→</span>
             </Link>
             <Link
-              href="/pricing"
-              className="rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:border-brand-200 hover:text-brand-600"
+              href="/search"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-brand-200 bg-white px-6 py-3 text-sm font-semibold text-brand-600 shadow-sm transition hover:bg-brand-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
             >
-              See pricing
+              Trust my listing <span aria-hidden="true">→</span>
             </Link>
           </div>
           <div className="mt-10 grid max-w-lg gap-3 rounded-2xl border border-white/80 bg-white/70 p-4 text-sm text-slate-600 shadow-sm sm:grid-cols-3">
