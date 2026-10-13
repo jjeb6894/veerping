@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ScoreGauge } from "@/components/ScoreGauge";
 import { TrustBadge } from "@/components/TrustBadge";
 import { ListingDetailsEditor } from "@/components/ListingDetailsEditor";
+import { ListingPhotoPicker } from "@/components/ListingPhotoPicker";
 import { cleanEnteredListing, type EnteredListing } from "@/lib/listing-input";
 import type { TrustScoreResult } from "@/types";
 
@@ -206,7 +207,7 @@ function ResultsContent() {
         {(listing?.images?.length ?? 0) > 0 && (
           <figure className="mt-6 overflow-hidden rounded-2xl border border-slate-100 bg-slate-50">
             <div className="grid gap-2 sm:grid-cols-2">
-              {listing?.images?.slice(0, 4).map((image, index) => (
+              {listing?.images?.slice(0, 8).map((image, index) => (
                 <img
                   key={image}
                   src={image}
@@ -220,6 +221,7 @@ function ResultsContent() {
             </figcaption>
           </figure>
         )}
+        {result.platformId === "autotrader" && <ListingPhotoPicker key={result.url} />}
 
         <section className="mt-8">
           <div className="flex items-end justify-between gap-4">
