@@ -211,14 +211,18 @@ export function parseVehicleListing(html: string, listingUrl: string, diagnostic
       mileage?.unitCode ?? mileage?.unitText ?? "miles"), origin],
     [html.match(/\b[\d,]+\s*(?:miles|mi|km)\b/i)?.[0], "visible-text"],
   ]);
+  const description = url.hostname.endsWith(".co.uk") ? metaValue(html, "og:description") : undefined;
+  const ukDescription = description?.match(/\bfor sale in (.+?) from (.+?)\s+-\s+Find your perfect car/i);
   const sellerName = choose("seller", [
     [recordText(seller?.name ?? source?.dealerName ?? source?.sellerName), origin],
     [metaValue(html, "author"), "metadata"],
+    [ukDescription?.[2], "open-graph"],
   ]);
   const location = choose("location", [
     [locationOf(seller?.address ?? seller?.location ?? source?.sellerLocation), origin],
     [[cleanText(seller?.city ?? source?.city), cleanText(seller?.state ?? source?.state)].filter(Boolean).join(", "), origin],
     [metaValue(html, "geo.placename"), "metadata"],
+    [ukDescription?.[1], "open-graph"],
   ]);
   const vin = choose("vin", [[source?.vehicleIdentificationNumber ?? source?.vin, origin]]);
   const conditionValue = cleanText(source?.itemCondition ?? source?.condition);
