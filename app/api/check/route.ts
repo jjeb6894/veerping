@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     ? await fetchAutoTraderListing(url)
     : undefined;
   if (listing?.sourceStatus === "blocked" || listing?.sourceStatus === "javascript_required") {
-    listing = await renderAutoTraderListing(url) ?? listing;
+    listing = await renderAutoTraderListing(url, request.headers.get("cf-connecting-ip")) ?? listing;
   }
   const checks = runCheckPipeline(url, adapter.checks);
   const score = aggregateScore(checks);
