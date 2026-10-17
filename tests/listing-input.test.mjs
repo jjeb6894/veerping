@@ -15,3 +15,10 @@ test('saved details accept only bounded known text fields', () => {
     { title: 'Car', seller: 'A'.repeat(160) });
   assert.deepEqual(cleanEnteredListing(null), {});
 });
+
+test('copied UK listing text suggests pound prices and mileage', () => {
+  assert.deepEqual(suggestListingDetails('2021 BMW X3\n£32,405\n55,316 miles'), {
+    title: '2021 BMW X3', price: '£32,405', mileage: '55,316 miles',
+  });
+});
+

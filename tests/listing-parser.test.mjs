@@ -69,3 +69,21 @@ test('UK structured listing remains supported and no network call is made for un
   globalThis.fetch = async () => { throw Error('should not fetch'); };
   assert.equal((await fetchAutoTraderListing('https://www.autotrader.com/')).sourceStatus, 'unsupported');
 });
+
+test('UK rendered listing extracts the advertised price and listing gallery photos', () => {
+  const uk = 'https://www.autotrader.co.uk/car-details/123456789';
+  const html = `<meta name="og:title" content="2021 Black BMW X3 for sale for £32,405 in Orpington">
+    <meta name="og:description" content="2021 BMW X3 for sale in ORPINGTON, KENT from Prestige Cars Kent - Find your perfect car today with Autotrader">
+    <p>55,316 miles</p>
+    <img src="https://m.atcdn.co.uk/a/media/w800/one.jpg" alt="Front">
+    <img src="https://m.atcdn.co.uk/a/media/w600/two.jpg" alt="Rear">
+    <img src="https://m.atcdn.co.uk/dealer-logo/logo.gif" alt="Logo">`;
+  const listing = parseVehicleListing(html, uk, { requestedUrl: uk, javascriptRenderingUsed: true });
+  assert.equal(listing.sourceStatus, 'extracted');
+  assert.equal(listing.price, '£32,405');
+  assert.equal(listing.mileage, '55,316 miles');
+  assert.equal(listing.seller, 'Prestige Cars Kent');
+  assert.equal(listing.location, 'ORPINGTON, KENT');
+  assert.deepEqual(listing.images, ['https://m.atcdn.co.uk/a/media/w800/one.jpg', 'https://m.atcdn.co.uk/a/media/w600/two.jpg']);
+});
+
