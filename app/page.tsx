@@ -22,29 +22,29 @@ const marketplacePreviews = [
   {
     name: "Facebook Marketplace",
     domain: "facebook.com",
-    title: "Used family SUV",
-    detail: "Local seller · sample listing",
-    price: "£8,950",
-    rating: "Seller rating: not provided",
-    tone: "from-blue-100 via-sky-50 to-indigo-100",
+    title: "2019 car · automatic",
+    detail: "Automatic · 54,000 miles",
+    price: "£14,750",
+    image: "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=900&q=80",
+    imageAlt: "Car parked outdoors",
   },
   {
     name: "Gumtree",
     domain: "gumtree.com",
-    title: "2018 city hatchback",
-    detail: "Private seller · sample listing",
-    price: "£5,400",
-    rating: "Seller rating: shown when available",
-    tone: "from-emerald-100 via-lime-50 to-teal-100",
+    title: "2018 sports car · manual",
+    detail: "Manual · 61,000 miles",
+    price: "£9,450",
+    image: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=900&q=80",
+    imageAlt: "Car on a road",
   },
   {
     name: "eBay",
     domain: "ebay.com",
-    title: "Refurbished tech bundle",
-    detail: "Business seller · sample listing",
-    price: "£249",
-    rating: "Seller rating: shown when available",
-    tone: "from-amber-100 via-orange-50 to-rose-100",
+    title: "Apple MacBook Pro 13-inch",
+    detail: "16GB RAM · 512GB SSD · Used",
+    price: "£549",
+    image: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=900&q=80",
+    imageAlt: "Laptop on a desk",
   },
 ];
 
@@ -52,10 +52,10 @@ export default function HomePage() {
   return (
     <div className="bg-white">
       <section className="relative overflow-hidden border-b border-slate-100">
-        <div className="pointer-events-none absolute inset-0 opacity-[0.08]">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-20">
           <div className="mx-auto grid max-w-6xl grid-cols-3 gap-8 px-6 pt-8 text-2xl font-bold text-slate-500 sm:grid-cols-6">
-            {["PayPal", "VISA", "mastercard", "eBay", "Toyota", "BMW", "Mercedes", "Google", "Apple", "Wells Fargo", "Chase", "Amazon"].map((brand) => (
-              <span key={brand} className="text-center">{brand}</span>
+            {["PayPal", "VISA", "mastercard", "eBay", "Toyota", "BMW", "Mercedes", "Google", "Apple", "Wells Fargo", "Chase", "Amazon"].map((brand, index) => (
+              <span key={brand} className={`text-center ${["text-blue-700", "text-indigo-700", "text-orange-600", "text-rose-600", "text-red-700", "text-sky-700", "text-slate-600", "text-emerald-700", "text-violet-700", "text-red-800", "text-blue-800", "text-amber-700"][index]}`}>{brand}</span>
             ))}
           </div>
         </div>
@@ -95,6 +95,16 @@ export default function HomePage() {
                 <LogoBubble name={adapter.name} domain={adapterLogoDomain(adapter)} size={20} />{adapter.name}
               </span>
             ))}
+            {[
+              { name: "HSBC", domain: "hsbc.com" },
+              { name: "Primark", domain: "primark.com" },
+              { name: "Citi", domain: "citigroup.com" },
+              { name: "ING Insurance", domain: "ing.com" },
+            ].map((company) => (
+              <span key={company.name} className="inline-flex items-center gap-1.5 font-semibold text-slate-600">
+                <LogoBubble name={company.name} domain={company.domain} size={20} />{company.name}
+              </span>
+            ))}
           </div>
         </div>
       </section>
@@ -106,17 +116,18 @@ export default function HomePage() {
             <h2 className="mt-2 text-2xl font-bold text-slate-900 sm:text-3xl">See the source before you submit</h2>
           </div>
           <p className="max-w-md text-sm leading-6 text-slate-500">
-            These are illustrative previews. We show seller ratings only when the submitted marketplace makes them available.
+            Explore the kinds of listings you can check. These examples are illustrative, not live listings.
           </p>
         </div>
         <div className="mt-7 grid gap-5 md:grid-cols-3">
           {marketplacePreviews.map((preview) => (
             <article key={preview.name} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-              <div className={`relative h-32 overflow-hidden bg-gradient-to-br ${preview.tone}`}>
-                <div className="absolute -bottom-5 left-8 h-20 w-36 rounded-[48%] bg-white/70 shadow-lg" />
-                <div className="absolute bottom-4 left-16 h-10 w-16 rounded-[48%] bg-slate-700/70" />
-                <span className="absolute right-3 top-3 rounded-full bg-white/80 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
-                  Sample preview
+              <div className="relative h-48 overflow-hidden bg-slate-100">
+                {/* Illustrative stock photo; the card does not represent a live listing. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={preview.image} alt={preview.imageAlt} className="h-full w-full object-cover" loading="lazy" />
+                <span className="absolute right-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
+                  Example listing
                 </span>
               </div>
               <div className="p-4">
@@ -128,7 +139,7 @@ export default function HomePage() {
                 <p className="mt-1 text-xs text-slate-500">{preview.detail}</p>
                 <div className="mt-4 flex items-end justify-between gap-3">
                   <span className="text-sm font-bold text-slate-900">{preview.price}</span>
-                  <span className="text-right text-[11px] font-medium text-slate-500">{preview.rating}</span>
+                  <Link href="/search" className="text-xs font-semibold text-brand-600 hover:underline">Check a listing →</Link>
                 </div>
               </div>
             </article>
