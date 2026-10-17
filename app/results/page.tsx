@@ -24,6 +24,7 @@ function ResultsContent() {
   const [paymentChecking, setPaymentChecking] = useState(Boolean(sessionId && url));
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMessage, setLoadingMessage] = useState(0);
   const [enteredByUrl, setEnteredByUrl] = useState<Record<string, EnteredListing>>(() =>
     url ? { [url]: storedListingDetails(url) } : {});
 
@@ -59,6 +60,12 @@ function ResultsContent() {
   }, [url]);
 
   useEffect(() => {
+    if (!loading || !url) return;
+    const timer = window.setInterval(() => setLoadingMessage((previous) => (previous + 1) % 2), 2500);
+    return () => window.clearInterval(timer);
+  }, [loading, url]);
+
+  useEffect(() => {
     if (!sessionId || !url) return;
     let cancelled = false;
     fetch(`/api/stripe/session?session_id=${encodeURIComponent(sessionId)}&url=${encodeURIComponent(url)}`)
@@ -77,8 +84,14 @@ function ResultsContent() {
 
   if (loading && url) {
     return (
-      <div className="mx-auto max-w-3xl px-6 py-24 text-center text-slate-500">
-        Preparing your listing preview…
+      <div className="mx-auto max-w-xl px-6 py-24 text-center" role="status" aria-live="polite">
+        <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-brand-600" aria-hidden="true" />
+        <h1 className="mt-6 text-2xl font-semibold text-slate-900">Preparing your listing preview</h1>
+        <p className="mt-3 text-slate-600">{loadingMessage === 0 ? "Requesting the listing…" : "Looking for available vehicle details and photos…"}</p>
+        <div className="mt-8 rounded-2xl bg-slate-50 p-5 text-left text-sm leading-6 text-slate-600">
+          <p>A VIN will be shown if it is available in the listing data.</p>
+          <p className="mt-2">Vehicle history, valuation, reverse image and AI-image checks are not connected yet.</p>
+        </div>
       </div>
     );
   }
