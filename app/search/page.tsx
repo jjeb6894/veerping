@@ -24,31 +24,23 @@ function SearchForm() {
 
   const grouped = useMemo(() => groupAdaptersByCategory(), []);
 
-  async function handlePasteSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    if (!url.trim()) {
-      setError("Paste a car listing URL first.");
+  function openReport(value: string) {
+    const pasted = value.trim();
+    try {
+      const parsed = new URL(pasted);
+      if (parsed.protocol !== "https:" && parsed.protocol !== "http:") throw new Error();
+    } catch {
+      setError("Please enter a valid listing link.");
       return;
     }
+    setError(null);
     setLoading(true);
-    try {
-      const res = await fetch("/api/check", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
-      });
-      if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        setError(data.error ?? "Could not prepare that listing.");
-        setLoading(false);
-        return;
-      }
-      router.push(`/results?url=${encodeURIComponent(url)}`);
-    } catch {
-      setError("Something went wrong preparing the report. Please try again.");
-      setLoading(false);
-    }
+    router.push(`/results?url=${encodeURIComponent(pasted)}`);
+  }
+
+  function handlePasteSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    openReport(url);
   }
 
   const filteredPlatforms = ADAPTERS.filter((a) =>
@@ -62,8 +54,8 @@ function SearchForm() {
       </p>
       <h1 className="mt-2 text-3xl font-bold text-slate-900">Paste a listing link</h1>
       <p className="mt-2 max-w-2xl text-slate-600">
-        Start with an AutoTrader UK or US car listing. We’ll create an empty report template,
-        fill in the details we can read, and leave the remaining verification ready to unlock.
+        Paste a car listing link to start the preview. We’ll show the details and photos we can read
+        and clearly mark any checks that aren’t available yet.
       </p>
 
       <BrandLetterCycle />
@@ -74,6 +66,14 @@ function SearchForm() {
           required
           value={url}
           onChange={(e) => setUrl(e.target.value)}
+          onPaste={(e) => {
+            const pasted = e.clipboardData.getData("text").trim();
+            if (pasted) {
+              e.preventDefault();
+              setUrl(pasted);
+              openReport(pasted);
+            }
+          }}
           aria-label="Car listing link"
           placeholder="https://www.autotrader.co.uk/car-details/…"
           className="flex-1 rounded-xl border border-slate-200 px-4 py-3 text-sm shadow-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"

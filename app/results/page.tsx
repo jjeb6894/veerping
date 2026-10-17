@@ -84,13 +84,15 @@ function ResultsContent() {
 
   if (loading && url) {
     return (
-      <div className="mx-auto max-w-xl px-6 py-24 text-center" role="status" aria-live="polite">
-        <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-brand-600" aria-hidden="true" />
-        <h1 className="mt-6 text-2xl font-semibold text-slate-900">Preparing your listing preview</h1>
-        <p className="mt-3 text-slate-600">{loadingMessage === 0 ? "Requesting the listing…" : "Looking for available vehicle details and photos…"}</p>
-        <div className="mt-8 rounded-2xl bg-slate-50 p-5 text-left text-sm leading-6 text-slate-600">
-          <p>A VIN will be shown if it is available in the listing data.</p>
-          <p className="mt-2">Vehicle history, valuation, reverse image and AI-image checks are not connected yet.</p>
+      <div className="mx-auto max-w-3xl px-6 py-16" role="status" aria-live="polite">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">Your vehicle report</p>
+        <h1 className="mt-2 text-3xl font-bold text-slate-900">Building your listing preview</h1>
+        <p className="mt-2 text-sm text-slate-500">Your link has been received. Available details will appear as soon as the listing responds.</p>
+        <div className="mt-8 overflow-hidden rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
+          <div className="flex items-center gap-3"><span className="text-emerald-600" aria-hidden="true">✓</span><span className="text-sm font-medium text-slate-700">Listing link received</span></div>
+          <div className="mt-5 flex items-center gap-3"><span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-200 border-t-brand-600" aria-hidden="true" /><span className="text-sm font-medium text-slate-700">{loadingMessage === 0 ? "Requesting the listing…" : "Looking for vehicle details and photos…"}</span></div>
+          <div className="mt-6 h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full w-1/2 animate-pulse rounded-full bg-brand-500" /></div>
+          <p className="mt-4 text-xs leading-5 text-slate-500">Vehicle history, valuation, reverse image and AI-image checks are not connected yet. No vehicle trust score is available.</p>
         </div>
       </div>
     );
@@ -213,9 +215,16 @@ function ResultsContent() {
 
         <section className="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-5">
           <h2 className="text-lg font-semibold text-slate-900">Vehicle history and checks</h2>
-          <p className="mt-2 text-sm text-slate-600">
-            Independent vehicle history and seller checks are not connected yet. No trust score or check results are available for this listing.
-          </p>
+          <p className="mt-2 text-sm text-slate-600">A vehicle trust score is unavailable until independent checks are connected and completed.</p>
+          <ul className="mt-4 space-y-2 text-sm text-slate-600">
+            <li>Vehicle details and photos: {listing?.sourceStatus === "extracted" ? "retrieved from the listing" : "not available from the listing"}</li>
+            <li>VIN: {listing?.vin ? "provided; not independently checked" : "not available; not checked"}</li>
+            <li>MOT and mileage history: not connected</li>
+            <li>Stolen, finance and accident history: not connected</li>
+            <li>Original service history: not available</li>
+            <li>Reverse image search and AI-image detection: not connected</li>
+            <li>Market valuation: not connected</li>
+          </ul>
           {!paid && <p className="mt-3 text-sm text-slate-600">Paid reports will be available once the report and publishing service is connected.</p>}
         </section>
 
