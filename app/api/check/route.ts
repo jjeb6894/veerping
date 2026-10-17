@@ -3,7 +3,6 @@ import { randomUUID } from "node:crypto";
 import { detectPlatform } from "@/lib/adapters";
 import { fetchAutoTraderListing } from "@/lib/listing-parser";
 import { renderAutoTraderListing } from "@/lib/rendered-autotrader";
-import { aggregateScore, runCheckPipeline, tierForScore } from "@/lib/scoring";
 import type { TrustScoreResult } from "@/types";
 
 /**
@@ -11,8 +10,7 @@ import type { TrustScoreResult } from "@/types";
  *
  * AutoTrader pages are read from their public HTML metadata so the preview
  * can show the vehicle details and photos that the source exposes. The trust
- * checks remain clearly labelled as simulated until provider integrations are
- * connected.
+ * checks and scores remain unavailable until provider integrations are connected.
  */
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as { url?: string };
@@ -36,19 +34,15 @@ export async function POST(request: Request) {
   if (listing?.sourceStatus === "blocked" || listing?.sourceStatus === "javascript_required") {
     listing = await renderAutoTraderListing(url, request.headers.get("cf-connecting-ip")) ?? listing;
   }
-  const checks = runCheckPipeline(url, adapter.checks);
-  const score = aggregateScore(checks);
-  const { tier, label } = tierForScore(score);
-
   const result: TrustScoreResult = {
     id: randomUUID(),
     url,
     platformId: adapter.id,
     platformName: adapter.name,
-    score,
-    tier,
-    tierLabel: label,
-    checks,
+    score: null,
+    tier: null,
+    tierLabel: null,
+    checks: [],
     listing,
     photoUrl: listing?.images?.[0],
     createdAt: new Date().toISOString(),

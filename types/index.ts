@@ -98,9 +98,9 @@ export interface TrustScoreResult {
   url: string;
   platformId: string;
   platformName: string;
-  score: number; // 0-100 aggregate
-  tier: TrustTier;
-  tierLabel: string;
+  score: number | null; // unavailable until actual checks can support a score
+  tier: TrustTier | null;
+  tierLabel: string | null;
   checks: CheckResult[];
   listing?: ListingSnapshot;
   photoUrl?: string;
