@@ -3,17 +3,10 @@
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import { ScoreGauge } from "@/components/ScoreGauge";
-import { TrustBadge } from "@/components/TrustBadge";
 import { ListingDetailsEditor } from "@/components/ListingDetailsEditor";
 import { ListingPhotoPicker } from "@/components/ListingPhotoPicker";
 import { cleanEnteredListing, type EnteredListing } from "@/lib/listing-input";
 import type { TrustScoreResult } from "@/types";
-
-type ReportQuote = {
-  formattedAmount: string;
-  currency: string;
-};
 
 function storedListingDetails(url: string | null): EnteredListing {
   if (!url || typeof window === "undefined") return {};
@@ -27,7 +20,6 @@ function ResultsContent() {
   const url = searchParams.get("url");
   const sessionId = searchParams.get("session_id");
   const [result, setResult] = useState<TrustScoreResult | null>(null);
-  const [quote, setQuote] = useState<ReportQuote | null>(null);
   const [paid, setPaid] = useState(false);
   const [paymentChecking, setPaymentChecking] = useState(Boolean(sessionId && url));
   const [error, setError] = useState<string | null>(null);
@@ -41,23 +33,18 @@ function ResultsContent() {
     let cancelled = false;
     (async () => {
       try {
-        const [checkResponse, quoteResponse] = await Promise.all([
-          fetch("/api/check", {
+        const checkResponse = await fetch("/api/check", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ url }),
-          }),
-          fetch("/api/report-quote"),
-        ]);
+          });
         const data = await checkResponse.json();
-        const quoteData = await quoteResponse.json().catch(() => null);
 
         if (cancelled) return;
         if (!checkResponse.ok) {
           setError(data.error ?? "Could not prepare that link.");
         } else {
           setResult(data as TrustScoreResult);
-          if (quoteResponse.ok && quoteData) setQuote(quoteData as ReportQuote);
         }
       } catch {
         if (!cancelled) setError("Something went wrong preparing the report.");
@@ -91,7 +78,7 @@ function ResultsContent() {
   if (loading && url) {
     return (
       <div className="mx-auto max-w-3xl px-6 py-24 text-center text-slate-500">
-        Preparing your empty report template…
+        Preparing your listing preview…
       </div>
     );
   }
@@ -107,11 +94,6 @@ function ResultsContent() {
     );
   }
 
-  const previewCount = Math.max(1, Math.ceil(result.checks.length / 2));
-  const previewChecks = result.checks.slice(0, previewCount);
-  const lockedChecks = paid ? [] : result.checks.slice(previewCount);
-  const visibleChecks = paid ? result.checks : previewChecks;
-  const reportUrl = `/pricing?url=${encodeURIComponent(result.url)}`;
   const entered = enteredByUrl[result.url] ?? {};
   const hasEnteredDetails = Object.keys(entered).length > 0;
   const listing = { ...result.listing, ...entered };
@@ -137,20 +119,13 @@ function ResultsContent() {
             </p>
             <h1 className="mt-2 text-2xl font-bold text-slate-900">{result.platformName} listing</h1>
             <p className="mt-1 max-w-sm truncate text-sm text-slate-500">{result.url}</p>
-            <div className="mt-4">
-              <TrustBadge tier={result.tier} label={paid ? "Unlocked" : "Free preview"} size="lg" />
-            </div>
-          </div>
-          <div className="text-center">
-            <ScoreGauge score={result.score} tier={result.tier} />
-            <p className="mt-2 text-xs text-slate-500">Preview score</p>
           </div>
         </div>
 
         <div className="mt-6 rounded-2xl bg-amber-50 p-4 text-sm text-amber-900 ring-1 ring-amber-100">
           {paid
-            ? "Payment confirmed. Some provider-backed checks may remain unavailable until their data source is connected."
-            : "This report starts with the listing data we can read. Remaining provider checks are shown as unavailable until the complete report is unlocked."}
+            ? "Payment confirmed. Only details actually available from the listing or supplied by you are shown below."
+            : "This preview shows listing details that could be retrieved, or details you add yourself. Vehicle history and independent checks are not yet connected."}
         </div>
 
         <section className="mt-6">
@@ -223,77 +198,13 @@ function ResultsContent() {
         )}
         {result.platformId === "autotrader" && <ListingPhotoPicker key={result.url} />}
 
-        <section className="mt-8">
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900">
-                {paid ? "Completed checks" : "Preview checks"}
-              </h2>
-              <p className="mt-1 text-sm text-slate-500">
-                {paid
-                  ? "Payment confirmed; the full check list is now visible."
-                  : previewChecks.length + " of " + result.checks.length + " checks are shown in this preview."}
-              </p>
-            </div>
-            <span className="text-sm font-semibold text-brand-600">
-              {paid ? "Paid report" : (quote?.formattedAmount ?? "£9.99") + " to unlock"}
-            </span>
-          </div>
-
-          <div className="mt-4 space-y-3">
-            {visibleChecks.map((check) => (
-              <div
-                key={check.type}
-                className="flex items-start justify-between gap-4 rounded-xl border border-slate-100 p-4"
-              >
-                <div>
-                  <p className="font-medium text-slate-900">{check.label}</p>
-                  <p className="mt-1 text-sm text-slate-600">{check.summary}</p>
-                </div>
-                <span className="shrink-0 rounded-full bg-emerald-50 px-3 py-1 text-sm font-semibold text-emerald-700">
-                  {paid ? "Unlocked" : "Free"}
-                </span>
-              </div>
-            ))}
-            {lockedChecks.map((check) => (
-              <div
-                key={`locked-${check.type}`}
-                className="flex items-center justify-between gap-4 rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4"
-              >
-                <div>
-                  <p className="font-medium text-slate-500">{check.label}</p>
-                  <p className="mt-1 text-sm text-slate-400">Complete verification is locked.</p>
-                </div>
-                <span className="shrink-0 rounded-full bg-slate-200 px-3 py-1 text-sm font-semibold text-slate-500">
-                  Locked
-                </span>
-              </div>
-            ))}
-          </div>
+        <section className="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+          <h2 className="text-lg font-semibold text-slate-900">Vehicle history and checks</h2>
+          <p className="mt-2 text-sm text-slate-600">
+            Independent vehicle history and seller checks are not connected yet. No trust score or check results are available for this listing.
+          </p>
+          {!paid && <p className="mt-3 text-sm text-slate-600">Paid reports will be available once the report and publishing service is connected.</p>}
         </section>
-
-        <div className="mt-8 rounded-2xl bg-brand-50 p-5 ring-1 ring-brand-100">
-          <p className="text-sm font-semibold text-slate-900">
-            {paid ? "Report unlocked" : "Finish this vehicle report"}
-          </p>
-          <p className="mt-1 text-sm text-slate-600">
-            {paid
-              ? "The paid Checkout session is linked to this listing. The report keeps provider-backed results separate from source listing data."
-              : "Unlock the remaining checks and the completed report template for this exact listing. The displayed local price is an estimate; payment opens Stripe Checkout when live billing is configured."}
-          </p>
-          {paid ? (
-            <span className="mt-4 inline-flex rounded-full bg-emerald-100 px-5 py-2.5 text-sm font-semibold text-emerald-800">
-              Payment confirmed
-            </span>
-          ) : (
-            <Link
-              href={reportUrl}
-              className="mt-4 inline-flex rounded-full bg-brand-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-600"
-            >
-              Unlock complete report · {quote?.formattedAmount ?? "£9.99"}
-            </Link>
-          )}
-        </div>
 
         {paymentChecking && (
           <p className="mt-4 text-center text-xs text-slate-500">Confirming your Stripe payment…</p>
@@ -319,4 +230,5 @@ export default function ResultsPage() {
     </Suspense>
   );
 }
+
 
