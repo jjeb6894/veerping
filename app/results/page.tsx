@@ -5,6 +5,7 @@ import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { ListingDetailsEditor } from "@/components/ListingDetailsEditor";
 import { ListingPhotoPicker } from "@/components/ListingPhotoPicker";
+import { ListingGallery } from "@/components/ListingGallery";
 import { cleanEnteredListing, type EnteredListing } from "@/lib/listing-input";
 import type { TrustScoreResult } from "@/types";
 
@@ -84,15 +85,16 @@ function ResultsContent() {
 
   if (loading && url) {
     return (
-      <div className="mx-auto max-w-3xl px-6 py-16" role="status" aria-live="polite">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">Your vehicle report</p>
-        <h1 className="mt-2 text-3xl font-bold text-slate-900">Building your listing preview</h1>
-        <p className="mt-2 text-sm text-slate-500">Your link has been received. Available details will appear as soon as the listing responds.</p>
-        <div className="mt-8 overflow-hidden rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
-          <div className="flex items-center gap-3"><span className="text-emerald-600" aria-hidden="true">✓</span><span className="text-sm font-medium text-slate-700">Listing link received</span></div>
-          <div className="mt-5 flex items-center gap-3"><span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-200 border-t-brand-600" aria-hidden="true" /><span className="text-sm font-medium text-slate-700">{loadingMessage === 0 ? "Requesting the listing…" : "Looking for vehicle details and photos…"}</span></div>
-          <div className="mt-6 h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full w-1/2 animate-pulse rounded-full bg-brand-500" /></div>
-          <p className="mt-4 text-xs leading-5 text-slate-500">Vehicle history, valuation, reverse image and AI-image checks are not connected yet. No vehicle trust score is available.</p>
+      <div className="mx-auto max-w-4xl px-5 py-12 sm:py-20" role="status" aria-live="polite">
+        <div className="overflow-hidden rounded-3xl bg-slate-950 px-6 py-10 text-white shadow-xl sm:px-12 sm:py-14">
+          <p className="text-xs font-bold uppercase tracking-[0.25em] text-emerald-300">TCL · Vehicle report preview</p>
+          <h1 className="mt-5 max-w-xl text-3xl font-bold tracking-tight sm:text-5xl">Your listing, brought together.</h1>
+          <p className="mt-4 max-w-lg text-sm leading-6 text-slate-300 sm:text-base">We’re gathering the available details from your link. Your preview will appear as soon as the listing responds.</p>
+          <div className="mt-8 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-5 py-4">
+            <span className="h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-white/20 border-t-emerald-300" aria-hidden="true" />
+            <span className="text-sm font-medium text-white">{loadingMessage === 0 ? "Requesting the listing…" : "Looking for available details and photos…"}</span>
+          </div>
+          <p className="mt-5 text-xs leading-5 text-slate-400">Listing details are provided by the source. Independent vehicle checks are not yet connected.</p>
         </div>
       </div>
     );
@@ -121,20 +123,21 @@ function ResultsContent() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-6 py-16">
+    <div className="mx-auto max-w-5xl px-5 py-10 sm:px-6 sm:py-16">
       <Link href="/search" className="text-sm text-brand-600 hover:underline">
         ← Check another car
       </Link>
 
-      <div className="mt-6 rounded-3xl border border-slate-100 bg-white p-8 shadow-sm">
-        <div className="flex flex-col items-center gap-6 border-b border-slate-100 pb-8 sm:flex-row sm:items-start sm:justify-between">
+      <div className="mt-6 rounded-3xl border border-slate-100 bg-white p-5 shadow-sm sm:p-8">
+        <div className="flex flex-col gap-6 rounded-2xl bg-slate-950 p-6 text-white sm:flex-row sm:items-start sm:justify-between sm:p-8">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">
-              Vehicle report preview
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300">
+              TCL · Vehicle report preview
             </p>
-            <h1 className="mt-2 text-2xl font-bold text-slate-900">{result.platformName} listing</h1>
-            <p className="mt-1 max-w-sm truncate text-sm text-slate-500">{result.url}</p>
+            <h1 className="mt-3 text-2xl font-bold sm:text-3xl">{listing?.title || `${result.platformName} listing`}</h1>
+            <p className="mt-2 text-sm text-slate-300">Listing details from {result.platformName}</p>
           </div>
+          <span className="self-start rounded-full border border-white/20 px-3 py-1 text-xs font-medium text-slate-200">Preview · not certified</span>
         </div>
 
         <div className="mt-6 rounded-2xl bg-amber-50 p-4 text-sm text-amber-900 ring-1 ring-amber-100">
@@ -143,7 +146,9 @@ function ResultsContent() {
             : "This preview shows listing details that could be retrieved, or details you add yourself. Vehicle history and independent checks are not yet connected."}
         </div>
 
-        <section className="mt-6">
+        {(listing?.images?.length ?? 0) > 0 && <ListingGallery key={`gallery:${result.url}`} images={listing.images!} platform={result.platformName} />}
+
+        <section className="mt-8">
           <div className="flex items-end justify-between">
             <div>
               <h2 className="text-lg font-semibold text-slate-900">Listing details</h2>
@@ -195,24 +200,7 @@ function ResultsContent() {
           )}
         </section>
 
-        {(listing?.images?.length ?? 0) > 0 && (
-          <figure className="mt-6 overflow-hidden rounded-2xl border border-slate-100 bg-slate-50">
-            <div className="grid gap-2 sm:grid-cols-2">
-              {listing?.images?.slice(0, 8).map((image, index) => (
-                <img
-                  key={image}
-                  src={image}
-                  alt={`Vehicle photo ${index + 1} from the ${result.platformName} listing`}
-                  className="h-56 w-full object-cover"
-                />
-              ))}
-            </div>
-            <figcaption className="px-4 py-2 text-xs text-slate-500">
-              Photos supplied by the listing source; not independently verified.
-            </figcaption>
-          </figure>
-        )}
-        {result.platformId === "autotrader" && <ListingPhotoPicker key={result.url} />}
+        {result.platformId === "autotrader" && <ListingPhotoPicker key={`photo-picker:${result.url}`} />}
 
         <section className="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-5">
           <h2 className="text-lg font-semibold text-slate-900">Vehicle history and checks</h2>
