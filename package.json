@@ -16,6 +16,7 @@
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "dependencies": {
+    "@cloudflare/puppeteer": "^1.4.0",
     "next": "^16.3.8",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
@@ -39,3 +40,4 @@
     "node": ">=22.0.0"
   }
 }
+
