@@ -4,7 +4,7 @@ import { parseVehicleListing } from "@/lib/listing-parser";
 import type { ListingSnapshot } from "@/types";
 
 /** Fallback for AutoTrader UK pages that reject a plain server request. */
-export async function renderAutoTraderListing(listingUrl: string): Promise<ListingSnapshot | null> {
+export async function renderAutoTraderListing(listingUrl: string, clientIp: string | null): Promise<ListingSnapshot | null> {
   let url: URL;
   try { url = new URL(listingUrl); } catch { return null; }
   if (url.protocol !== "https:" || !["autotrader.co.uk", "www.autotrader.co.uk"].includes(url.hostname) ||
@@ -12,10 +12,16 @@ export async function renderAutoTraderListing(listingUrl: string): Promise<Listi
   // Only the listing identifier is needed; tracking and finance parameters are not sent.
   url.search = "";
   url.hash = "";
-  let binding: BrowserWorker | undefined;
-  try { binding = (getCloudflareContext().env as unknown as { LISTING_BROWSER?: BrowserWorker }).LISTING_BROWSER; }
+  type Limiter = { limit(input: { key: string }): Promise<{ success: boolean }> };
+  let env: { LISTING_BROWSER?: BrowserWorker; LISTING_RATE_LIMIT?: Limiter; LISTING_GLOBAL_LIMIT?: Limiter };
+  try { env = getCloudflareContext().env as unknown as typeof env; }
   catch { return null; }
-  if (!binding) return null;
+  const binding = env.LISTING_BROWSER;
+  if (!binding || !env.LISTING_RATE_LIMIT || !env.LISTING_GLOBAL_LIMIT || !clientIp) return null;
+  try {
+    if (!(await env.LISTING_RATE_LIMIT.limit({ key: clientIp })).success ||
+        !(await env.LISTING_GLOBAL_LIMIT.limit({ key: "listing-import" })).success) return null;
+  } catch { return null; }
 
   let browser: Awaited<ReturnType<typeof puppeteer.launch>> | undefined;
   try {
@@ -33,6 +39,7 @@ export async function renderAutoTraderListing(listingUrl: string): Promise<Listi
     });
     const response = await page.goto(url.toString(), { waitUntil: "domcontentloaded", timeout: 25000 });
     if (!response || !response.ok()) return null;
+    await page.waitForSelector("h1", { timeout: 5000 }).catch(() => undefined);
     const finalUrl = new URL(page.url());
     if (!["autotrader.co.uk", "www.autotrader.co.uk"].includes(finalUrl.hostname) ||
         finalUrl.protocol !== "https:" || finalUrl.port || !/^\/car-details\/\d+\/?$/.test(finalUrl.pathname)) return null;
