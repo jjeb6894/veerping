@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { detectPlatform } from "@/lib/adapters";
 import { fetchAutoTraderListing } from "@/lib/listing-parser";
+import { renderAutoTraderListing } from "@/lib/rendered-autotrader";
 import { aggregateScore, runCheckPipeline, tierForScore } from "@/lib/scoring";
 import type { TrustScoreResult } from "@/types";
 
@@ -29,9 +30,12 @@ export async function POST(request: Request) {
     );
   }
 
-  const listing = adapter.id === "autotrader"
+  let listing = adapter.id === "autotrader"
     ? await fetchAutoTraderListing(url)
     : undefined;
+  if (listing?.sourceStatus === "blocked" || listing?.sourceStatus === "javascript_required") {
+    listing = await renderAutoTraderListing(url) ?? listing;
+  }
   const checks = runCheckPipeline(url, adapter.checks);
   const score = aggregateScore(checks);
   const { tier, label } = tierForScore(score);
@@ -52,3 +56,4 @@ export async function POST(request: Request) {
 
   return NextResponse.json(result);
 }
+
