@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { detectPlatform } from "@/lib/adapters";
 import { fetchAutoTraderListing } from "@/lib/listing-parser";
 import { renderAutoTraderListing } from "@/lib/rendered-autotrader";
+import { decodeVin } from "@/lib/vin-decoder";
 import type { TrustScoreResult } from "@/types";
 
 /**
@@ -44,6 +45,7 @@ export async function POST(request: Request) {
     tierLabel: null,
     checks: [],
     listing,
+    vinDecode: listing?.vin ? await decodeVin(listing.vin) : undefined,
     photoUrl: listing?.images?.[0],
     createdAt: new Date().toISOString(),
   };

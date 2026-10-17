@@ -67,6 +67,7 @@ export interface ListingSnapshot {
   price?: string;
   mileage?: string;
   vin?: string;
+  registration?: string;
   condition?: string;
   seller?: string;
   sellerRating?: string;
@@ -103,6 +104,7 @@ export interface TrustScoreResult {
   tierLabel: string | null;
   checks: CheckResult[];
   listing?: ListingSnapshot;
+  vinDecode?: { status: "decoded" | "invalid" | "unavailable"; make?: string; model?: string; year?: string };
   photoUrl?: string;
   createdAt: string;
 }

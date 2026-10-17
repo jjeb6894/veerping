@@ -225,6 +225,13 @@ export function parseVehicleListing(html: string, listingUrl: string, diagnostic
     [ukDescription?.[1], "open-graph"],
   ]);
   const vin = choose("vin", [[source?.vehicleIdentificationNumber ?? source?.vin, origin]]);
+  // Only use explicitly labelled registration fields. Arbitrary plate-shaped text can be a postcode or another vehicle.
+  const registrationText = url.hostname.endsWith(".co.uk")
+    ? cleanText(source?.vehicleRegistration ?? source?.registrationNumber ?? source?.registration)
+    : undefined;
+  const normalizedRegistration = registrationText?.toUpperCase().replace(/\s/g, "");
+  const registration = normalizedRegistration && /^[A-Z]{2}\d{2}[A-Z]{3}$/.test(normalizedRegistration)
+    ? choose("registration", [[normalizedRegistration, origin]]) : undefined;
   const conditionValue = cleanText(source?.itemCondition ?? source?.condition);
   const condition = choose("condition", [[conditionValue?.match(/(?:New|Used|Refurbished|Damaged)Condition/i)?.[0].replace(/Condition$/i, "") ?? conditionValue, origin]]);
   const sellerRating = choose("sellerRating", [[formatRating(seller?.aggregateRating ?? source?.aggregateRating), origin]]);
@@ -252,7 +259,7 @@ export function parseVehicleListing(html: string, listingUrl: string, diagnostic
     ? "parser_failed" : /__NEXT_DATA__|id=["']__next|enable javascript/i.test(html) && !source
       ? "javascript_required" : "required_data_unavailable";
   return {
-    title, year, make, model, trim, price, mileage: mileageText, vin, condition,
+    title, year, make, model, trim, price, mileage: mileageText, vin, registration, condition,
     seller: sellerName, sellerRating, location, images: imageList, listingUrl: listingUrlValue,
     sourceStatus: status,
     sourceMessage: status === "extracted" ? undefined : status === "parser_failed"

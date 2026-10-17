@@ -9,6 +9,13 @@ const diagnostics = () => ({ requestedUrl: url, javascriptRenderingUsed: false }
 const originalFetch = globalThis.fetch;
 afterEach(() => { globalThis.fetch = originalFetch; });
 
+test('reads a labelled UK registration without guessing from a postcode', () => {
+  const page = value => `<script type="application/ld+json">${JSON.stringify({ '@type': 'Car', name: 'BMW X3', model: 'X3', offers: { '@type': 'Offer', price: 10000 }, ...value })}</script>`;
+  const ukUrl = 'https://www.autotrader.co.uk/car-details/123456789';
+  assert.equal(parseVehicleListing(page({ registrationNumber: 'AB12 CDE' }), ukUrl, diagnostics()).registration, 'AB12CDE');
+  assert.equal(parseVehicleListing(page({ description: 'Located near SW1A 1AA' }), ukUrl, diagnostics()).registration, undefined);
+});
+
 test('US Vehicle JSON-LD fills report fields and provenance', async () => {
   const listing = parseVehicleListing(await fixture('autotrader-us.html'), url, diagnostics());
   assert.equal(listing.sourceStatus, 'extracted');

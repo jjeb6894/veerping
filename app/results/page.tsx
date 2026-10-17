@@ -161,6 +161,7 @@ function ResultsContent() {
               ["Seller", listingValue(listing?.seller)],
               ["Seller rating", listingValue(listing?.sellerRating)],
               ["Location", listingValue(listing?.location)],
+              ...(listing?.registration ? [["Registration", listing.registration]] : []),
               ...(listing?.vin ? [["VIN", listing.vin]] : []),
               ...(listing?.condition ? [["Condition", listing.condition]] : []),
             ].map(([field, value]) => (
@@ -218,13 +219,15 @@ function ResultsContent() {
           <p className="mt-2 text-sm text-slate-600">A vehicle trust score is unavailable until independent checks are connected and completed.</p>
           <ul className="mt-4 space-y-2 text-sm text-slate-600">
             <li>Vehicle details and photos: {listing?.sourceStatus === "extracted" ? "retrieved from the listing" : "not available from the listing"}</li>
-            <li>VIN: {listing?.vin ? "provided; not independently checked" : "not available; not checked"}</li>
+            <li>VIN: {entered.vin && entered.vin !== result.listing?.vin ? "manually supplied; not decoded" : !result.listing?.vin ? "not available from the listing; not checked" : result.vinDecode?.status === "decoded" ? `decoded by NHTSA: ${[result.vinDecode.year, result.vinDecode.make, result.vinDecode.model].filter(Boolean).join(" ")}` : result.vinDecode?.status === "invalid" ? "listing VIN does not have a standard 17-character format" : "decoder could not identify this VIN"}</li>
+            <li>Registration: {result.listing?.registration ? "shown by the listing; not independently checked" : "not available in the listing data; photo reading is not connected"}</li>
             <li>MOT and mileage history: not connected</li>
             <li>Stolen, finance and accident history: not connected</li>
             <li>Original service history: not available</li>
             <li>Reverse image search and AI-image detection: not connected</li>
             <li>Market valuation: not connected</li>
           </ul>
+          <p className="mt-3 text-xs text-slate-500">The free US NHTSA decoder may have limited information for UK vehicles. Decoding identifies specifications; it does not check theft, ownership, VIN authenticity or vehicle history.</p>
           {!paid && <p className="mt-3 text-sm text-slate-600">Paid reports will be available once the report and publishing service is connected.</p>}
         </section>
 
