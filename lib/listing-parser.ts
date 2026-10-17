@@ -204,6 +204,7 @@ export function parseVehicleListing(html: string, listingUrl: string, diagnostic
     [formatPrice(offer?.price ?? source?.price ?? stateVehicle?.listingPrice,
       offer?.priceCurrency ?? source?.priceCurrency ?? (url.hostname.endsWith(".co.uk") ? "GBP" : "USD")), origin],
     [formatPrice(metaValue(html, "product:price:amount"), metaValue(html, "product:price:currency")), "metadata"],
+    [url.hostname.endsWith(".co.uk") ? metaValue(html, "og:title")?.match(/\bfor sale for\s+(£[\d,]+(?:\.\d{2})?)/i)?.[1] : undefined, "open-graph"],
   ]);
   const mileageText = choose("mileage", [
     [formatMileage(mileage?.value ?? source?.mileage ?? stateVehicle?.mileage,
@@ -223,12 +224,21 @@ export function parseVehicleListing(html: string, listingUrl: string, diagnostic
   const conditionValue = cleanText(source?.itemCondition ?? source?.condition);
   const condition = choose("condition", [[conditionValue?.match(/(?:New|Used|Refurbished|Damaged)Condition/i)?.[0].replace(/Condition$/i, "") ?? conditionValue, origin]]);
   const sellerRating = choose("sellerRating", [[formatRating(seller?.aggregateRating ?? source?.aggregateRating), origin]]);
+  const ukGalleryImages = url.hostname.endsWith(".co.uk")
+    ? (html.match(/<img\b[^>]*>/gi) ?? []).flatMap(tag => {
+        const image = absoluteUrl(attributes(tag).src, url);
+        if (!image) return [];
+        const imageUrl = new URL(image);
+        return imageUrl.hostname === "m.atcdn.co.uk" && imageUrl.pathname.startsWith("/a/media/") ? [image] : [];
+      })
+    : [];
   const imageList = [
+    ...ukGalleryImages,
     ...images(source?.image ?? source?.images, url),
     ...images(metaValue(html, "og:image"), url),
     ...images(metaValue(html, "twitter:image"), url),
   ].filter((value, index, all) => all.indexOf(value) === index).slice(0, MAX_IMAGES);
-  if (imageList.length) fieldSources.images = source?.image ? origin : "metadata";
+  if (imageList.length) fieldSources.images = ukGalleryImages.length ? "listing-gallery" : source?.image ? origin : "metadata";
   const listingUrlValue = absoluteUrl(source?.url ?? metaValue(html, "og:url"), url) ?? url.toString();
   fieldSources.listingUrl = source?.url ? origin : metaValue(html, "og:url") ? "open-graph" : "request-url";
   diagnostics.fieldSources = fieldSources;
@@ -299,3 +309,4 @@ export async function fetchAutoTraderListing(listingUrl: string): Promise<Listin
     return log(failure("parser_failed", "The listing response could not be processed."));
   }
 }
+
