@@ -13,3 +13,17 @@ enabled = true
 [browser]
 binding = "LISTING_BROWSER"
 
+[[ratelimits]]
+name = "LISTING_RATE_LIMIT"
+namespace_id = "72001"
+  [ratelimits.simple]
+  limit = 5
+  period = 60
+
+[[ratelimits]]
+name = "LISTING_GLOBAL_LIMIT"
+namespace_id = "72002"
+  [ratelimits.simple]
+  limit = 30
+  period = 60
+
