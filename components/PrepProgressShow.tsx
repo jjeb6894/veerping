@@ -15,11 +15,13 @@ const STAGES = [
 const TARGET_MIN = 10_000;
 const TARGET_RANGE = 5_000;
 
+const MIN_SHOW_MS = 5000;
+
 /**
  * Presentation-only progress show. It is deliberately decorative: the real
  * listing import runs separately, and `complete` is driven by that fetch.
- * The show never outlasts the real work — when `complete` fires it finishes
- * and calls onDone so the parent can reveal the actual result.
+ * The show always plays for about five seconds so the full sequence is seen,
+ * then calls onDone so the parent can reveal the actual result.
  */
 export function PrepProgressShow({ complete, onDone }: {
   complete: boolean;
@@ -31,6 +33,7 @@ export function PrepProgressShow({ complete, onDone }: {
   const [finished, setFinished] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const targetRef = useRef(TARGET_MIN + Math.floor(Math.random() * TARGET_RANGE));
+  const mountedAt = useRef(performance.now());
   const onDoneRef = useRef(onDone);
   onDoneRef.current = onDone;
 
@@ -66,7 +69,8 @@ export function PrepProgressShow({ complete, onDone }: {
     setFinished(true);
     setPercent(100);
     setSources(targetRef.current);
-    const timer = window.setTimeout(() => onDoneRef.current?.(), reducedMotion ? 0 : 700);
+    const remaining = reducedMotion ? 0 : Math.max(300, MIN_SHOW_MS - (performance.now() - mountedAt.current));
+    const timer = window.setTimeout(() => onDoneRef.current?.(), remaining);
     return () => window.clearTimeout(timer);
   }, [complete, finished, reducedMotion]);
 
