@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ListingDetailsEditor } from "@/components/ListingDetailsEditor";
 import { ListingPhotoPicker } from "@/components/ListingPhotoPicker";
@@ -56,11 +56,18 @@ function ResultsContent() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showDone, setShowDone] = useState(false);
+  const showDuration = useRef(7000);
   const [enteredByUrl, setEnteredByUrl] = useState<Record<string, EnteredListing>>(() =>
     url ? { [url]: storedListingDetails(url) } : {});
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) showDuration.current = 0;
+  }, []);
+
+  useEffect(() => {
     if (!url) return;
+    const startedAt = performance.now();
 
     let cancelled = false;
     (async () => {
@@ -81,7 +88,17 @@ function ResultsContent() {
       } catch {
         if (!cancelled) setError("Something went wrong preparing the report.");
       } finally {
-        if (!cancelled) setLoading(false);
+        const finish = () => {
+          if (cancelled) return;
+          const remaining = Math.max(0, showDuration.current - (performance.now() - startedAt));
+          window.setTimeout(() => {
+            if (!cancelled) {
+              setLoading(false);
+              setShowDone(true);
+            }
+          }, remaining);
+        };
+        finish();
       }
     })();
 
@@ -113,7 +130,7 @@ function ResultsContent() {
     return (
       <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-b from-blue-50 via-white to-emerald-50/60">
         <div className="mx-auto max-w-3xl px-6 py-16 sm:py-20">
-          <PrepProgressShow complete={!loading} onDone={() => setShowDone(true)} />
+          <PrepProgressShow complete={false} onDone={() => setShowDone(true)} />
         </div>
       </div>
     );

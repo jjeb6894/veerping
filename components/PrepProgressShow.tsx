@@ -15,7 +15,7 @@ const STAGES = [
 const TARGET_MIN = 10_000;
 const TARGET_RANGE = 5_000;
 
-const MIN_SHOW_MS = 5000;
+const MIN_SHOW_MS = 7000;
 
 /**
  * Presentation-only progress show. It is deliberately decorative: the real
