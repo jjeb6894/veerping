@@ -20,12 +20,10 @@ export function PaidReport({ result }: { result: TrustScoreResult }) {
   const listing = result.listing;
   const checkedAt = new Date(result.createdAt).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" });
 
-  const [photosOkay, setPhotosOkay] = useState<boolean | null>(null);
+  const [photosOkay, setPhotosOkay] = useState<boolean | null>(() =>
+    listing?.images?.length ? null : false);
   useEffect(() => {
-    if (!listing?.images?.length) {
-      setPhotosOkay(null);
-      return;
-    }
+    if (!listing?.images?.length) return;
     let cancelled = false;
     Promise.all(
       listing.images.slice(0, 4).map((src) =>

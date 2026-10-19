@@ -1,16 +1,25 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { ListingDetailsEditor } from "@/components/ListingDetailsEditor";
 import { ListingPhotoPicker } from "@/components/ListingPhotoPicker";
 import { ListingGallery } from "@/components/ListingGallery";
-import { PrepProgressShow } from "@/components/PrepProgressShow";
 import { PurchaseCard } from "@/components/PurchaseCard";
 import { PaidReport } from "@/components/PaidReport";
 import { cleanEnteredListing, type EnteredListing } from "@/lib/listing-input";
 import type { TrustScoreResult } from "@/types";
+
+const RESULT_CACHE_PREFIX = "templatechecklist:check-result:";
+
+function cachedResult(url: string | null): TrustScoreResult | null {
+  if (!url || typeof window === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(RESULT_CACHE_PREFIX + url);
+    return raw ? (JSON.parse(raw) as TrustScoreResult) : null;
+  } catch { return null; }
+}
 
 type CheckRowState = "queued" | "running" | "completed" | "after_payment" | "unavailable" | "failed";
 
@@ -50,20 +59,13 @@ function ResultsContent() {
   const url = searchParams.get("url");
   const sessionId = searchParams.get("session_id");
   const checkoutCancelled = searchParams.get("checkout") === "cancelled";
-  const [result, setResult] = useState<TrustScoreResult | null>(null);
+  const [result, setResult] = useState<TrustScoreResult | null>(() => cachedResult(url));
   const [paid, setPaid] = useState(false);
   const [paymentChecking, setPaymentChecking] = useState(Boolean(sessionId && url));
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [showDone, setShowDone] = useState(false);
-  const showDuration = useRef(7000);
+  const [loading, setLoading] = useState(() => !cachedResult(url));
   const [enteredByUrl, setEnteredByUrl] = useState<Record<string, EnteredListing>>(() =>
     url ? { [url]: storedListingDetails(url) } : {});
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) showDuration.current = 0;
-  }, []);
 
   useEffect(() => {
     if (!url) return;
@@ -84,21 +86,14 @@ function ResultsContent() {
           setError(data.error ?? "Could not prepare that link.");
         } else {
           setResult(data as TrustScoreResult);
+          try {
+            sessionStorage.setItem(RESULT_CACHE_PREFIX + url, JSON.stringify(data));
+          } catch { /* Best-effort cache; the report still renders from state. */ }
         }
       } catch {
         if (!cancelled) setError("Something went wrong preparing the report.");
       } finally {
-        const finish = () => {
-          if (cancelled) return;
-          const remaining = Math.max(0, showDuration.current - (performance.now() - startedAt));
-          window.setTimeout(() => {
-            if (!cancelled) {
-              setLoading(false);
-              setShowDone(true);
-            }
-          }, remaining);
-        };
-        finish();
+        if (!cancelled) setLoading(false);
       }
     })();
 
@@ -126,11 +121,12 @@ function ResultsContent() {
 
   const canPurchase = Boolean(result && result.listing?.sourceStatus === "extracted" && !paid);
 
-  if (loading && url && !showDone) {
+  if (loading) {
     return (
       <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-b from-blue-50 via-white to-emerald-50/60">
-        <div className="mx-auto max-w-3xl px-6 py-16 sm:py-20">
-          <PrepProgressShow complete={false} onDone={() => setShowDone(true)} />
+        <div className="mx-auto max-w-3xl px-6 py-24 text-center" role="status" aria-live="polite">
+          <span className="mx-auto block h-8 w-8 animate-spin rounded-full border-2 border-blue-100 border-t-blue-500" aria-hidden="true" />
+          <p className="mt-4 text-sm font-medium text-slate-600">Preparing your vehicle preview…</p>
         </div>
       </div>
     );
