@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { getAdminSupabase } from "@/lib/supabase-admin";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -8,6 +9,22 @@ export async function GET(request: Request) {
 
   if (!sessionId) {
     return NextResponse.json({ error: "Missing session_id.", paid: false }, { status: 400 });
+  }
+
+  const supabase = getAdminSupabase();
+
+  // Check stored fulfilment first so revisiting a success URL after the
+  // Stripe record ages out, or a repeated refresh, still resolves correctly.
+  if (supabase) {
+    const { data: stored } = await supabase
+      .from("report_payments")
+      .select("listing_url, payment_status")
+      .eq("session_id", sessionId)
+      .maybeSingle();
+    if (stored?.payment_status === "paid") {
+      const paid = !requestedUrl || stored.listing_url === requestedUrl;
+      return NextResponse.json({ paid, listingUrl: stored.listing_url });
+    }
   }
 
   const secretKey = process.env.STRIPE_SECRET_KEY;
@@ -27,6 +44,18 @@ export async function GET(request: Request) {
       session.payment_status === "paid" &&
       session.metadata?.product === "vehicle-report-unlock" &&
       (!requestedUrl || requestedUrl === listingUrl);
+
+    if (paid && supabase && listingUrl) {
+      // Idempotent: the session_id primary key means repeated confirmations
+      // upsert the same row without double fulfilment.
+      await supabase.from("report_payments").upsert({
+        session_id: sessionId,
+        listing_url: listingUrl,
+        currency: session.currency ?? "unknown",
+        amount_total: session.amount_total ?? 0,
+        payment_status: "paid",
+      });
+    }
 
     return NextResponse.json({
       paid,
