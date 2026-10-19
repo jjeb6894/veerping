@@ -4,7 +4,7 @@
   "private": true,
   "description": "TemplateChecklist listing reports and trust signals on Cloudflare Workers.",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --webpack",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
