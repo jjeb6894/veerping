@@ -8,6 +8,7 @@ import { ListingPhotoPicker } from "@/components/ListingPhotoPicker";
 import { ListingGallery } from "@/components/ListingGallery";
 import { PurchaseCard } from "@/components/PurchaseCard";
 import { PaidReport } from "@/components/PaidReport";
+import { TrustScoreBar } from "@/components/TrustScoreBar";
 import { cleanEnteredListing, type EnteredListing } from "@/lib/listing-input";
 import type { TrustScoreResult } from "@/types";
 
@@ -291,9 +292,11 @@ function ResultsContent() {
                 ))}
               </ul>
               <p className="mt-4 text-xs leading-5 text-slate-500">
-                A trust score is not shown. Scores only appear when a documented method runs over sufficiently completed checks; missing or unavailable checks are never scored.
+                Each row shows the true state of that check. Unavailable checks do not affect the trust score.
               </p>
             </section>
+
+            <TrustScoreBar />
           </div>
 
           <div className="space-y-6 lg:sticky lg:top-8">
