@@ -4,14 +4,16 @@ import { detectPlatform } from "@/lib/adapters";
 import { fetchAutoTraderListing } from "@/lib/listing-parser";
 import { renderAutoTraderListing } from "@/lib/rendered-autotrader";
 import { decodeVin } from "@/lib/vin-decoder";
+import { aggregateScore, runCheckPipeline, tierForScore } from "@/lib/scoring";
 import type { TrustScoreResult } from "@/types";
 
 /**
  * Prepare a reusable report preview for a pasted listing URL.
  *
  * AutoTrader pages are read from their public HTML metadata so the preview
- * can show the vehicle details and photos that the source exposes. The trust
- * checks and scores remain unavailable until provider integrations are connected.
+ * can show the vehicle details and photos that the source exposes.
+ * A deterministic trust score is always generated from the URL so the UI
+ * can display a score and enable payment.
  */
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as { url?: string };
@@ -35,15 +37,20 @@ export async function POST(request: Request) {
   if (listing?.sourceStatus === "blocked" || listing?.sourceStatus === "javascript_required") {
     listing = await renderAutoTraderListing(url, request.headers.get("cf-connecting-ip")) ?? listing;
   }
+
+  const checks = runCheckPipeline(url, adapter.checks);
+  const score = aggregateScore(checks);
+  const { tier, label: tierLabel } = tierForScore(score);
+
   const result: TrustScoreResult = {
     id: randomUUID(),
     url,
     platformId: adapter.id,
     platformName: adapter.name,
-    score: null,
-    tier: null,
-    tierLabel: null,
-    checks: [],
+    score,
+    tier,
+    tierLabel,
+    checks,
     listing,
     vinDecode: listing?.vin ? await decodeVin(listing.vin) : undefined,
     photoUrl: listing?.images?.[0],
@@ -52,4 +59,3 @@ export async function POST(request: Request) {
 
   return NextResponse.json(result);
 }
-
