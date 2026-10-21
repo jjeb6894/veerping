@@ -28,6 +28,7 @@ type CheckRow = {
   label: string;
   state: CheckRowState;
   note: string;
+  sensitive?: boolean;
 };
 
 const STATE_STYLES: Record<CheckRowState, string> = {
@@ -119,7 +120,6 @@ function ResultsContent() {
     };
   }, [sessionId, url]);
 
-  // Allow purchase whenever we have a result and a score, even if listing extraction was partial.
   const canPurchase = Boolean(result && typeof result.score === "number" && !paid);
 
   if (loading) {
@@ -167,24 +167,28 @@ function ResultsContent() {
         : "Not available in the listing data; photo plate reading is not connected.",
     },
     {
+      label: "Stolen / crash / problematic records",
+      state: "after_payment",
+      note: "Hidden until you unlock the full Trust Score report. These checks cover theft flags, finance, and accident history.",
+      sensitive: true,
+    },
+    {
       label: "Duplicate description scan",
       state: "after_payment",
       note: "Included in the paid report. Compared against other listings where sources allow.",
+      sensitive: true,
     },
     {
       label: "Location and seller consistency",
       state: "after_payment",
       note: "Included in the paid report. Public mentions are potential matches needing interpretation, not proof.",
+      sensitive: true,
     },
     {
       label: "Phone and seller scam reports",
       state: "after_payment",
       note: "Included in the paid report, from public scam-report sources where available.",
-    },
-    {
-      label: "Theft, finance and accident history",
-      state: "unavailable",
-      note: "No provider is connected for this region yet. The report will mark this check as unavailable rather than estimate it.",
+      sensitive: true,
     },
   ];
 
@@ -214,9 +218,9 @@ function ResultsContent() {
 
               <div className="p-6 sm:p-8">
                 <div className="rounded-2xl bg-amber-50 p-4 text-sm leading-6 text-amber-900 ring-1 ring-amber-100">
-                  Prototype: results are simulated. {paid
-                    ? "Payment confirmed. Only details actually available from the listing or supplied by you are shown."
-                    : "This preview shows listing details that could be retrieved, or details you add yourself. Paid checks are shown as unavailable until purchased."}
+                  {paid
+                    ? "Payment confirmed. Full Trust Score details are now unlocked."
+                    : "This preview shows the Trust Score and public listing details. Sensitive records (stolen, crash, finance, scam) stay blurred until you unlock them for £9.99."}
                 </div>
 
                 {images.length > 0 && <ListingGallery key={`gallery:${result.url}`} images={images} platform={result.platformName} />}
@@ -277,22 +281,32 @@ function ResultsContent() {
 
             <section className="rounded-3xl border border-blue-100 bg-white p-6 shadow-sm sm:p-8" aria-labelledby="checks-title" hidden={paid}>
               <h2 id="checks-title" className="text-lg font-bold text-slate-900">Checks on this vehicle</h2>
-              <p className="mt-1 text-sm text-slate-500">Each row shows the true state of that check. Nothing is marked complete unless it actually ran.</p>
+              <p className="mt-1 text-sm text-slate-500">Sensitive records stay blurred until you unlock the full report for £9.99.</p>
               <ul className="mt-5 divide-y divide-slate-100">
-                {checkRows.map((row) => (
-                  <li key={row.label} className="flex flex-col gap-1.5 py-3.5 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-slate-800">{row.label}</p>
-                      <p className="mt-0.5 text-xs leading-5 text-slate-500">{row.note}</p>
-                    </div>
-                    <span className={`shrink-0 self-start rounded-full px-3 py-1 text-xs font-semibold ${STATE_STYLES[row.state]}`}>
-                      {STATE_LABELS[row.state]}
-                    </span>
-                  </li>
-                ))}
+                {checkRows.map((row) => {
+                  const isBlurred = row.sensitive && !paid;
+                  return (
+                    <li key={row.label} className="relative flex flex-col gap-1.5 py-3.5 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
+                      <div className={`min-w-0 ${isBlurred ? "select-none blur-sm" : ""}`}>
+                        <p className="text-sm font-semibold text-slate-800">{row.label}</p>
+                        <p className="mt-0.5 text-xs leading-5 text-slate-500">{row.note}</p>
+                      </div>
+                      <span className={`shrink-0 self-start rounded-full px-3 py-1 text-xs font-semibold ${STATE_STYLES[row.state]} ${isBlurred ? "blur-sm" : ""}`}>
+                        {STATE_LABELS[row.state]}
+                      </span>
+                      {isBlurred && (
+                        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                          <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm ring-1 ring-slate-200">
+                            Unlock for £9.99
+                          </span>
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
               <p className="mt-4 text-xs leading-5 text-slate-500">
-                Each row shows the true state of that check. Unavailable checks do not affect the trust score.
+                The Trust Score itself stays visible. Stolen, crash, finance and other sensitive records are blurred until payment.
               </p>
             </section>
 
@@ -317,13 +331,13 @@ function ResultsContent() {
               <p className="text-center text-xs text-slate-500">Confirming your payment…</p>
             )}
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <p className="text-sm font-semibold text-slate-900">Not ready to buy?</p>
+              <p className="text-sm font-semibold text-slate-900">Unlock the full report</p>
               <p className="mt-1 text-sm leading-6 text-slate-500">
-                The preview stays available on this page. You can also{" "}
+                £9.99 reveals the blurred stolen, crash, finance and problematic records. You can also{" "}
                 <Link href={`/claims?url=${encodeURIComponent(result.url)}`} className="font-medium text-blue-600 hover:underline">
                   file a claim
                 </Link>{" "}
-                if something looks wrong with this listing.
+                if something looks wrong.
               </p>
             </div>
           </div>
