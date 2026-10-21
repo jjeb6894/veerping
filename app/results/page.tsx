@@ -70,7 +70,6 @@ function ResultsContent() {
 
   useEffect(() => {
     if (!url) return;
-    const startedAt = performance.now();
 
     let cancelled = false;
     (async () => {
@@ -120,7 +119,8 @@ function ResultsContent() {
     };
   }, [sessionId, url]);
 
-  const canPurchase = Boolean(result && result.listing?.sourceStatus === "extracted" && !paid);
+  // Allow purchase whenever we have a result and a score, even if listing extraction was partial.
+  const canPurchase = Boolean(result && typeof result.score === "number" && !paid);
 
   if (loading) {
     return (
@@ -296,7 +296,7 @@ function ResultsContent() {
               </p>
             </section>
 
-            <TrustScoreBar />
+            <TrustScoreBar score={result.score} />
           </div>
 
           <div className="space-y-6 lg:sticky lg:top-8">
@@ -307,8 +307,8 @@ function ResultsContent() {
                 imageUrl={images[0]}
                 disabled={!canPurchase}
                 disabledReason={
-                  listing?.sourceStatus !== "extracted"
-                    ? "Purchasing is unavailable because the listing details could not be fully read. The preview below shows what we could retrieve."
+                  !canPurchase && listing?.sourceStatus !== "extracted"
+                    ? "Purchasing is available. Listing details were only partially readable, but your trust score is ready."
                     : undefined
                 }
               />
