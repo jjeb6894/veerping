@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { formatCents } from "@/lib/pricing";
 
 type Quote = {
   currency: string;
@@ -10,11 +9,6 @@ type Quote = {
   displayOnly: boolean;
 };
 
-/**
- * Purchase summary card. The quoted amount and currency come from the same
- * per-country quote used to create the Stripe session, so what the customer
- * sees before checkout always matches what Stripe charges.
- */
 export function PurchaseCard({ listingUrl, title, imageUrl, disabled, disabledReason }: {
   listingUrl: string;
   title: string;
@@ -48,7 +42,7 @@ export function PurchaseCard({ listingUrl, title, imageUrl, disabled, disabledRe
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           plan: "one-off-check",
-          currency: quote?.currency,
+          currency: quote?.currency ?? "GBP",
           url: listingUrl,
           successUrl: `${window.location.origin}/results?url=${encodeURIComponent(listingUrl)}&session_id={CHECKOUT_SESSION_ID}`,
           cancelUrl: `${window.location.origin}/results?url=${encodeURIComponent(listingUrl)}&checkout=cancelled`,
@@ -71,16 +65,17 @@ export function PurchaseCard({ listingUrl, title, imageUrl, disabled, disabledRe
     }
   }
 
+  const displayPrice = quote?.formattedAmount ?? "£9.99";
+
   return (
     <aside className="rounded-3xl border border-blue-100 bg-white p-6 shadow-sm" aria-labelledby="purchase-title">
-      <h2 id="purchase-title" className="text-lg font-bold text-slate-900">Get the full report</h2>
+      <h2 id="purchase-title" className="text-lg font-bold text-slate-900">Unlock full Trust Score</h2>
       <p className="mt-1 text-sm leading-6 text-slate-500">
-        One-time payment. No subscription. The report is prepared after payment is confirmed.
+        One-time payment. Reveals blurred stolen, crash, finance and problematic records.
       </p>
 
       <div className="mt-5 flex items-center gap-3 rounded-2xl bg-slate-50 p-3">
         {imageUrl ? (
-          // Remote listing images are rendered directly; the Next optimizer is not used here.
           // eslint-disable-next-line @next/next/no-img-element
           <img src={imageUrl} alt="" className="h-14 w-20 shrink-0 rounded-lg border border-slate-200 object-cover" />
         ) : (
@@ -90,21 +85,21 @@ export function PurchaseCard({ listingUrl, title, imageUrl, disabled, disabledRe
       </div>
 
       <ul className="mt-5 space-y-2.5 text-sm text-slate-700">
-        <li className="flex gap-2"><span className="text-emerald-600" aria-hidden="true">✓</span>Complete vehicle details and photo review</li>
-        <li className="flex gap-2"><span className="text-emerald-600" aria-hidden="true">✓</span>Full check results with sources and limitations</li>
-        <li className="flex gap-2"><span className="text-emerald-600" aria-hidden="true">✓</span>Registration reading and history checks included where available</li>
-        <li className="flex gap-2"><span className="text-slate-400" aria-hidden="true">·</span>Checks that cannot run are clearly marked, never guessed</li>
+        <li className="flex gap-2"><span className="text-emerald-600" aria-hidden="true">✓</span>Full vehicle details and photos</li>
+        <li className="flex gap-2"><span className="text-emerald-600" aria-hidden="true">✓</span>Stolen, crash and finance records</li>
+        <li className="flex gap-2"><span className="text-emerald-600" aria-hidden="true">✓</span>Seller and scam-report checks</li>
+        <li className="flex gap-2"><span className="text-slate-400" aria-hidden="true">·</span>Unavailable checks stay clearly marked</li>
       </ul>
 
       <div className="mt-5 flex items-baseline justify-between rounded-2xl border border-blue-100 bg-blue-50/60 px-4 py-3">
-        <span className="text-sm font-medium text-slate-600">Report total</span>
+        <span className="text-sm font-medium text-slate-600">Unlock price</span>
         <span className="text-xl font-bold tabular-nums text-slate-900">
-          {quote?.formattedAmount ?? "…"}
-          {quote?.currency && <span className="ml-1 text-xs font-semibold text-slate-500">{quote.currency}</span>}
+          {displayPrice}
+          <span className="ml-1 text-xs font-semibold text-slate-500">GBP</span>
         </span>
       </div>
       <p className="mt-2 text-xs text-slate-500">
-        The price shown here is the exact amount charged at checkout, in your local currency.
+        £9.99 one-time. Unlocks the blurred sections of the Trust Score report.
       </p>
 
       {disabled ? (
@@ -118,7 +113,7 @@ export function PurchaseCard({ listingUrl, title, imageUrl, disabled, disabledRe
           disabled={starting}
           className="mt-5 w-full rounded-xl bg-blue-600 px-5 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-60"
         >
-          {starting ? "Opening secure payment…" : "Continue to secure payment"}
+          {starting ? "Opening secure payment…" : "Unlock for £9.99"}
         </button>
       )}
       {error && <p role="alert" className="mt-3 text-sm font-medium text-red-600">{error}</p>}
