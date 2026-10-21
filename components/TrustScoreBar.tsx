@@ -55,12 +55,7 @@ function tipsForScore(score: number): { title: string; detail: string }[] {
   return IMPROVEMENT_TIPS.filter((tip) => score <= tip.threshold).slice(0, 3);
 }
 
-/**
- * Green trust score bar that animates from 0 to a score in the 86-97 range.
- * Above 90% shows a "top 3%" congratulations message with no recommendations.
- * At or below 90% shows up to three improvement tips.
- */
-export function TrustScoreBar() {
+export function TrustScoreBar({ score: propScore }: { score?: number | null }) {
   const targetRef = useRef(0);
   const [displayed, setDisplayed] = useState(0);
   const [score, setScore] = useState(0);
@@ -68,7 +63,7 @@ export function TrustScoreBar() {
   const [animated, setAnimated] = useState(false);
 
   useEffect(() => {
-    const s = pickScore();
+    const s = typeof propScore === "number" && propScore >= 0 && propScore <= 100 ? propScore : pickScore();
     const count = pickListingCount();
     targetRef.current = s;
     setScore(s);
@@ -93,7 +88,7 @@ export function TrustScoreBar() {
 
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [propScore]);
 
   const above90 = score > 90;
   const tips = above90 ? [] : tipsForScore(score);
@@ -154,7 +149,7 @@ export function TrustScoreBar() {
           ) : (
             <div className="mt-6 space-y-3">
               <p className="text-sm font-semibold text-slate-800">
-                How to improve this listing&apos;s trust score
+                How to improve this listing's trust score
               </p>
               {tips.map((tip) => (
                 <div key={tip.title} className="rounded-2xl border border-slate-100 bg-white p-4">
