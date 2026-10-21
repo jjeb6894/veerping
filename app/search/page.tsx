@@ -12,6 +12,7 @@ import {
 import { BrandLetterCycle } from "@/components/BrandLetterCycle";
 import { LogoBubble } from "@/components/LogoBubble";
 import { CheckProgress, PREVIEW_MIN_MS } from "@/components/CheckProgress";
+import { SafeProgress } from "@/components/SafeProgress";
 import type { TrustScoreResult } from "@/types";
 
 function isValidListingUrl(value: string): boolean {
@@ -48,8 +49,6 @@ function SearchForm() {
 
   useEffect(() => () => window.clearTimeout(navigationTimer.current), []);
 
-  // Reveal only once BOTH conditions hold: the request completed result and
-  // at least seven seconds have elapsed since the check started.
   useEffect(() => {
     if (!requestDone || !loading || !attemptUrl) return;
     const remaining = Math.max(0, PREVIEW_MIN_MS - (performance.now() - startedAt));
@@ -157,7 +156,13 @@ function SearchForm() {
             </button>
           </div>
 
-          {loading && <div className="mt-4"><CheckProgress startedAt={startedAt} requestDone={requestDone} /></div>}
+          {loading && (
+            <div className="mt-4">
+              <SafeProgress>
+                <CheckProgress startedAt={startedAt} requestDone={requestDone} />
+              </SafeProgress>
+            </div>
+          )}
 
           {error && (
             <div id="listing-url-error" className="mt-4 rounded-xl bg-red-50 p-3 ring-1 ring-red-100">
