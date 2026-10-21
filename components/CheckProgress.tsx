@@ -9,11 +9,8 @@ type StageStatus = "pending" | "active" | "done";
 interface Stage {
   id: string;
   label: string;
-  /** Short narrative shown under the label while this stage runs. */
   detail: string;
-  /** Share of the overall bar this stage occupies (must sum to 100). */
   weight: number;
-  /** Minimum milliseconds this stage should visibly run before advancing. */
   minMs: number;
   subSteps: { label: string; detail: string }[];
 }
@@ -95,15 +92,38 @@ function easeOut(t: number): number {
   return 1 - Math.pow(1 - t, 3);
 }
 
-/**
- * Authentic multi-stage progress for the AutoTrader preview flow.
- *
- * Six named stages mirror what the /api/check route actually does, each with
- * its own percent and a readable sub-process the user can follow. The overall
- * bar is the weighted sum of stage percents. The seven-second minimum is still
- * honoured: stages slow down to fill the window, then snap to 100% when the
- * request is done.
- */
+function computeProgress(elapsed: number, requestDone: boolean): { progress: number[]; active: number; subIndex: number } {
+  const minimumPassed = elapsed >= PREVIEW_MIN_MS;
+  const progress = STAGES.map(() => 0);
+  let consumed = 0;
+  let active = 0;
+
+  for (let i = 0; i < STAGES.length; i++) {
+    const stage = STAGES[i];
+    const stageStart = consumed;
+    if (requestDone && minimumPassed) {
+      progress[i] = 100;
+    } else if (minimumPassed && !requestDone) {
+      const t = Math.min(1, (elapsed - stageStart) / stage.minMs);
+      progress[i] = easeOut(t) * 92;
+    } else if (elapsed >= stageStart) {
+      const t = Math.min(1, (elapsed - stageStart) / stage.minMs);
+      progress[i] = easeOut(t) * 100;
+    }
+    if (progress[i] < 100) active = i;
+    consumed += stage.minMs;
+  }
+
+  const stage = STAGES[active];
+  const stageStart = STAGES.slice(0, active).reduce((s, x) => s + x.minMs, 0);
+  const stageElapsed = Math.max(0, elapsed - stageStart);
+  const subCount = stage.subSteps.length;
+  const subSlice = stage.minMs / subCount;
+  const subIndex = Math.min(subCount - 1, Math.floor(stageElapsed / subSlice));
+
+  return { progress, active, subIndex };
+}
+
 export function CheckProgress({ startedAt, requestDone }: {
   startedAt: number;
   requestDone: boolean;
@@ -126,52 +146,16 @@ export function CheckProgress({ startedAt, requestDone }: {
   useEffect(() => {
     let raf = 0;
     let interval = 0;
-    let lastSubAdvance = 0;
 
     const tick = () => {
-      const now = performance.now();
-      const elapsed = now - startedAt;
-      const minimumPassed = elapsed >= PREVIEW_MIN_MS;
+      const elapsed = performance.now() - startedAt;
+      const { progress, active, subIndex: nextSub } = computeProgress(elapsed, requestDone);
 
-      const next = STAGES.map((_, i) => {
-        if (requestDone && minimumPassed) return 100;
-        return stageProgress[i];
-      });
-
-      // Walk through stages based on elapsed time vs. their minimum durations.
-      let consumed = 0;
-      let active = 0;
-      for (let i = 0; i < STAGES.length; i++) {
-        const stage = STAGES[i];
-        const stageStart = consumed;
-        const stageEnd = consumed + stage.minMs;
-        if (minimumPassed && !requestDone) {
-          // Slow creep: distribute remaining time across unfinished stages.
-          const t = Math.min(1, (elapsed - stageStart) / stage.minMs);
-          next[i] = Math.max(next[i], easeOut(t) * 92);
-        } else if (elapsed >= stageStart) {
-          const t = Math.min(1, (elapsed - stageStart) / stage.minMs);
-          next[i] = Math.max(next[i], easeOut(t) * 100);
-        }
-        if (next[i] < 100) active = i;
-        consumed = stageEnd;
-      }
-
-      // Advance the visible sub-process index for the active stage.
-      const stage = STAGES[active];
-      const stageStart = STAGES.slice(0, active).reduce((s, x) => s + x.minMs, 0);
-      const stageElapsed = elapsed - stageStart;
-      const subCount = stage.subSteps.length;
-      const subSlice = stage.minMs / subCount;
-      const targetSub = Math.min(subCount - 1, Math.floor(stageElapsed / subSlice));
-      if (targetSub !== lastSubAdvance) {
-        lastSubAdvance = targetSub;
-        setSubIndex(targetSub);
-      }
-
-      setStageProgress(next);
+      setStageProgress(progress);
       setActiveStage(active);
+      setSubIndex(nextSub);
 
+      const minimumPassed = elapsed >= PREVIEW_MIN_MS;
       if (requestDone && minimumPassed) {
         if (interval) window.clearInterval(interval);
         return;
@@ -186,7 +170,7 @@ export function CheckProgress({ startedAt, requestDone }: {
       cancelAnimationFrame(raf);
       if (interval) window.clearInterval(interval);
     };
-  }, [startedAt, requestDone, stageProgress]);
+  }, [startedAt, requestDone]);
 
   const overall = stageProgress.reduce(
     (sum, p, i) => sum + (p / 100) * STAGES[i].weight,
