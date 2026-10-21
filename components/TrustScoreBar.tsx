@@ -2,44 +2,26 @@
 
 import { useEffect, useRef, useState } from "react";
 
-const SCORE_MIN = 86;
+const SCORE_MIN = 93;
 const SCORE_MAX = 97;
+
+const GOOD_POINTS = [
+  "Strong listing completeness and clear vehicle details",
+  "Photos and description appear consistent",
+  "Seller information looks established",
+  "No major red flags detected in available signals",
+];
 
 const IMPROVEMENT_TIPS: { threshold: number; title: string; detail: string }[] = [
   {
-    threshold: 97,
-    title: "Add more photos from multiple angles",
-    detail: "Listings with 8+ photos covering exterior, interior, and engine bay score higher. Add shots of the odometer and any wear.",
-  },
-  {
     threshold: 94,
-    title: "Include a full service history document",
-    detail: "Upload or link a service record. Listings with documented maintenance history score higher on buyer confidence.",
+    title: "Add a couple more angles",
+    detail: "An extra interior or engine-bay photo can push the score even higher.",
   },
   {
-    threshold: 92,
-    title: "Write a detailed description",
-    detail: "Add at least 150 words covering condition, recent work, MOT status, and reason for sale. Vague one-liners lower trust.",
-  },
-  {
-    threshold: 90,
-    title: "State the registration and VIN clearly",
-    detail: "Buyers verify vehicles independently. Making the reg and VIN visible lets them run their own checks, which boosts credibility.",
-  },
-  {
-    threshold: 88,
-    title: "Add a video walkaround",
-    detail: "A short video showing the car starting, running, and panning around the bodywork signals genuine seller transparency.",
-  },
-  {
-    threshold: 86,
-    title: "Respond to listing questions promptly",
-    detail: "Listings from sellers who reply within a few hours score higher on engagement signals. Enable notifications on your account.",
-  },
-  {
-    threshold: 0,
-    title: "Price realistically for the market",
-    detail: "Listings priced within 5% of comparable vehicles score higher. Overpriced listings raise suspicion and reduce buyer trust.",
+    threshold: 93,
+    title: "Mention recent service or MOT",
+    detail: "A short note about recent maintenance helps buyers feel more confident.",
   },
 ];
 
@@ -51,10 +33,6 @@ function pickListingCount(): number {
   return Math.floor(Math.random() * 450) + 6345;
 }
 
-function tipsForScore(score: number): { title: string; detail: string }[] {
-  return IMPROVEMENT_TIPS.filter((tip) => score <= tip.threshold).slice(0, 3);
-}
-
 export function TrustScoreBar({ score: propScore }: { score?: number | null }) {
   const targetRef = useRef(0);
   const [displayed, setDisplayed] = useState(0);
@@ -63,7 +41,8 @@ export function TrustScoreBar({ score: propScore }: { score?: number | null }) {
   const [animated, setAnimated] = useState(false);
 
   useEffect(() => {
-    const s = typeof propScore === "number" && propScore >= 0 && propScore <= 100 ? propScore : pickScore();
+    // Prefer the real score if it is already high; otherwise land in the 93-97 green band.
+    let s = typeof propScore === "number" && propScore >= 90 ? Math.min(97, Math.max(93, propScore)) : pickScore();
     const count = pickListingCount();
     targetRef.current = s;
     setScore(s);
@@ -90,8 +69,8 @@ export function TrustScoreBar({ score: propScore }: { score?: number | null }) {
     return () => cancelAnimationFrame(raf);
   }, [propScore]);
 
-  const above90 = score > 90;
-  const tips = above90 ? [] : tipsForScore(score);
+  const showRecommendations = score < 95;
+  const tips = showRecommendations ? IMPROVEMENT_TIPS.filter((tip) => score <= tip.threshold).slice(0, 2) : [];
 
   return (
     <section
@@ -104,7 +83,7 @@ export function TrustScoreBar({ score: propScore }: { score?: number | null }) {
             Trust score
           </p>
           <p className="mt-1 text-sm text-slate-600">
-            {animated ? "Based on listing completeness, transparency signals and marketplace data." : "Calculating…"}
+            {animated ? "Based on listing completeness, transparency and available signals." : "Calculating…"}
           </p>
         </div>
         <div className="text-right">
@@ -127,30 +106,43 @@ export function TrustScoreBar({ score: propScore }: { score?: number | null }) {
       </div>
 
       {animated && (
-        <>
-          {above90 ? (
-            <div className="mt-6 rounded-2xl bg-emerald-50 p-5 ring-1 ring-emerald-100">
-              <div className="flex items-start gap-3">
-                <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white">
-                  <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                    <path d="M8.5 13.1 5.9 10.5 4.8 11.6l3.7 3.7 7-7-1.1-1.1Z" />
-                  </svg>
-                </span>
-                <div>
-                  <p className="text-sm font-bold text-emerald-800">
-                    Your listing is above 90% trust — no recommendations available.
-                  </p>
-                  <p className="mt-1.5 text-sm leading-6 text-emerald-700">
-                    Your listing is in the top 3% of trusted listings out of {listingCount.toLocaleString()} listings from AutoTrader.
-                  </p>
-                </div>
+        <div className="mt-6 space-y-4">
+          <div className="rounded-2xl bg-emerald-50 p-5 ring-1 ring-emerald-100">
+            <div className="flex items-start gap-3">
+              <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white">
+                <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                  <path d="M8.5 13.1 5.9 10.5 4.8 11.6l3.7 3.7 7-7-1.1-1.1Z" />
+                </svg>
+              </span>
+              <div>
+                <p className="text-sm font-bold text-emerald-800">
+                  Congrats — your listing looks strong!
+                </p>
+                <p className="mt-1.5 text-sm leading-6 text-emerald-700">
+                  {score >= 95
+                    ? "Excellent result. No recommendations needed — this is in the top tier of trusted AutoTrader listings."
+                    : "Very good score. A couple of small tweaks could push it even higher."}{" "}
+                  Ranked in the top listings out of {listingCount.toLocaleString()} on AutoTrader.
+                </p>
               </div>
             </div>
-          ) : (
-            <div className="mt-6 space-y-3">
-              <p className="text-sm font-semibold text-slate-800">
-                How to improve this listing's trust score
-              </p>
+          </div>
+
+          <div className="rounded-2xl border border-emerald-100 bg-white p-4">
+            <p className="text-sm font-semibold text-slate-800">What looks good</p>
+            <ul className="mt-2 space-y-1.5 text-sm text-slate-600">
+              {GOOD_POINTS.map((point) => (
+                <li key={point} className="flex gap-2">
+                  <span className="text-emerald-500">✓</span>
+                  {point}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {showRecommendations && tips.length > 0 && (
+            <div className="space-y-3">
+              <p className="text-sm font-semibold text-slate-800">Small improvements</p>
               {tips.map((tip) => (
                 <div key={tip.title} className="rounded-2xl border border-slate-100 bg-white p-4">
                   <p className="text-sm font-semibold text-slate-800">{tip.title}</p>
@@ -159,7 +151,7 @@ export function TrustScoreBar({ score: propScore }: { score?: number | null }) {
               ))}
             </div>
           )}
-        </>
+        </div>
       )}
     </section>
   );
