@@ -69,9 +69,9 @@ export function PurchaseCard({ listingUrl, title, imageUrl, disabled, disabledRe
 
   return (
     <aside className="rounded-3xl border border-blue-100 bg-white p-6 shadow-sm" aria-labelledby="purchase-title">
-      <h2 id="purchase-title" className="text-lg font-bold text-slate-900">Unlock all</h2>
+      <h2 id="purchase-title" className="text-lg font-bold text-slate-900">Unlock full Trust Score</h2>
       <p className="mt-1 text-sm leading-6 text-slate-500">
-        One-time payment. Reveals blurred stolen, crash, finance and problematic records, and gives you a shareable TCL trust link for this car.
+        One-time payment. Reveals blurred stolen, crash, finance and problematic records.
       </p>
 
       <div className="mt-5 flex items-center gap-3 rounded-2xl bg-slate-50 p-3">
@@ -88,7 +88,6 @@ export function PurchaseCard({ listingUrl, title, imageUrl, disabled, disabledRe
         <li className="flex gap-2"><span className="text-emerald-600" aria-hidden="true">✓</span>Full vehicle details and photos</li>
         <li className="flex gap-2"><span className="text-emerald-600" aria-hidden="true">✓</span>Stolen, crash and finance records</li>
         <li className="flex gap-2"><span className="text-emerald-600" aria-hidden="true">✓</span>Seller and scam-report checks</li>
-        <li className="flex gap-2"><span className="text-emerald-600" aria-hidden="true">✓</span>Shareable TCL trust link for your car</li>
         <li className="flex gap-2"><span className="text-slate-400" aria-hidden="true">·</span>Unavailable checks stay clearly marked</li>
       </ul>
 
@@ -100,7 +99,7 @@ export function PurchaseCard({ listingUrl, title, imageUrl, disabled, disabledRe
         </span>
       </div>
       <p className="mt-2 text-xs text-slate-500">
-        £9.99 one-time. Unlocks the blurred sections of the Trust Score report and issues your TCL trust link.
+        £9.99 one-time. Unlocks the blurred sections of the Trust Score report.
       </p>
 
       {disabled ? (
@@ -114,7 +113,7 @@ export function PurchaseCard({ listingUrl, title, imageUrl, disabled, disabledRe
           disabled={starting}
           className="mt-5 w-full rounded-xl bg-blue-600 px-5 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-60"
         >
-          {starting ? "Opening secure payment…" : "Unlock all for £9.99"}
+          {starting ? "Opening secure payment…" : "Unlock for £9.99"}
         </button>
       )}
       {error && <p role="alert" className="mt-3 text-sm font-medium text-red-600">{error}</p>}

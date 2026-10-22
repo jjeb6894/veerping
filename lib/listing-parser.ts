@@ -286,11 +286,7 @@ export async function fetchAutoTraderListing(listingUrl: string): Promise<Listin
 
   let response: Response;
   try {
-    response = await fetch(url, {
-      headers: { Accept: "text/html,application/xhtml+xml" },
-      redirect: "follow",
-      signal: AbortSignal.timeout(15000),
-    });
+    response = await fetch(url, { headers: { Accept: "text/html,application/xhtml+xml" }, redirect: "follow" });
   } catch {
     return failure("required_data_unavailable", "AutoTrader could not be reached from the report server.");
   }

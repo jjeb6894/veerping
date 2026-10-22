@@ -5,7 +5,6 @@ import { fetchAutoTraderListing } from "@/lib/listing-parser";
 import { renderAutoTraderListing } from "@/lib/rendered-autotrader";
 import { decodeVin } from "@/lib/vin-decoder";
 import { aggregateScore, runCheckPipeline, tierForScore } from "@/lib/scoring";
-import { decodeListingToken } from "@/lib/check-link";
 import type { TrustScoreResult } from "@/types";
 
 /**
@@ -17,12 +16,8 @@ import type { TrustScoreResult } from "@/types";
  * can display a score and enable payment.
  */
 export async function POST(request: Request) {
-  const body = (await request.json().catch(() => ({}))) as { url?: string; token?: string };
-  let url = body.url?.trim();
-
-  if (!url && body.token) {
-    url = decodeListingToken(body.token) ?? undefined;
-  }
+  const body = (await request.json().catch(() => ({}))) as { url?: string };
+  const url = body.url?.trim();
 
   if (!url) {
     return NextResponse.json({ error: "Missing url in request body." }, { status: 400 });
