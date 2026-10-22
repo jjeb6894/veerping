@@ -42,6 +42,7 @@ function ResultsContent() {
   const [paymentChecking, setPaymentChecking] = useState(Boolean(sessionId && url));
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(() => !cachedResult(url));
+  const [shareCopied, setShareCopied] = useState(false);
   const [enteredByUrl, setEnteredByUrl] = useState<Record<string, EnteredListing>>(() =>
     url ? { [url]: storedListingDetails(url) } : {});
 
@@ -126,8 +127,6 @@ function ResultsContent() {
   const images = listing?.images ?? [];
   const listingValue = (value?: string) => value ?? "Unavailable";
   const vehicleTitle = listing?.title || `${result.platformName} listing`;
-
-  const [shareCopied, setShareCopied] = useState(false);
 
   async function copyShareLink() {
     if (!result) return;
