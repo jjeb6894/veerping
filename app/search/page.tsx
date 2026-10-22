@@ -24,7 +24,7 @@ function isValidListingUrl(value: string): boolean {
   }
 }
 
-export function storeCachedResult(result: TrustScoreResult) {
+function storeCachedResult(result: TrustScoreResult) {
   try {
     sessionStorage.setItem(`templatechecklist:check-result:${result.url}`, JSON.stringify(result));
   } catch { /* Cache is best-effort; the results page falls back to fetching. */ }
