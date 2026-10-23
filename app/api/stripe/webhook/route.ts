@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { verifyCheckupSession } from "@/lib/checkup-payment";
 
 export async function POST(request: Request) {
   const payload = await request.text();
@@ -18,15 +19,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Missing Stripe signature." }, { status: 400 });
   }
 
+  const stripe = new Stripe(secretKey);
+  let event: Stripe.Event;
   try {
-    const stripe = new Stripe(secretKey);
-    const event = stripe.webhooks.constructEvent(payload, signature, webhookSecret);
+    event = stripe.webhooks.constructEvent(payload, signature, webhookSecret);
+  } catch {
+    return NextResponse.json({ error: "Invalid Stripe webhook signature." }, { status: 400 });
+  }
+  try {
 
     if (
       event.type === "checkout.session.completed" ||
       event.type === "checkout.session.async_payment_succeeded"
     ) {
       const session = event.data.object as Stripe.Checkout.Session;
+      if (session.metadata?.product === "tcl-vehicle-checkup") {
+        await verifyCheckupSession(stripe, session.id);
+      }
       if (
         session.payment_status === "paid" &&
         session.metadata?.product === "vehicle-report-unlock"
@@ -48,6 +57,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ received: true, eventType: event.type });
   } catch {
-    return NextResponse.json({ error: "Invalid Stripe webhook signature." }, { status: 400 });
+    return NextResponse.json({ error: "Payment fulfillment failed; Stripe should retry." }, { status: 503 });
   }
 }
