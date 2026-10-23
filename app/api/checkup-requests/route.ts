@@ -6,6 +6,7 @@ export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as {
     url?: string;
     paymentIntent?: boolean;
+    prepaymentConsent?: boolean;
     note?: string;
     title?: string;
   };
@@ -13,6 +14,10 @@ export async function POST(request: Request) {
   const url = body.url?.trim();
   if (!url) {
     return NextResponse.json({ error: "Missing url." }, { status: 400 });
+  }
+
+  if (body.paymentIntent === true && body.prepaymentConsent !== true) {
+    return NextResponse.json({ error: "Explicit prepayment consent is required." }, { status: 400 });
   }
 
   if (!detectPlatform(url)) {
@@ -33,6 +38,8 @@ export async function POST(request: Request) {
       vehicle_link: url,
       vehicle_title: body.title ?? null,
       buyer_payment_intent: Boolean(body.paymentIntent),
+      buyer_prepaid_consent: body.paymentIntent === true && body.prepaymentConsent === true,
+      buyer_prepaid_consent_at: body.paymentIntent === true && body.prepaymentConsent === true ? new Date().toISOString() : null,
       buyer_note: body.note?.trim() || null,
     })
     .select("id")
