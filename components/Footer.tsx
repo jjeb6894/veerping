@@ -45,6 +45,10 @@ export function Footer() {
       </div>
       <div className="border-t border-slate-100 py-4 text-center text-xs text-slate-400">
         © {new Date().getFullYear()} TemplateChecklist.com. Some provider checks may be unavailable until their data source is connected.
+        {" "}
+        <a href="https://templatechecklist.com/" className="hover:text-brand-600">
+          connected into the veerping repo
+        </a>
       </div>
     </footer>
   );
