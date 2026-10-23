@@ -181,11 +181,11 @@ export function SellerCheckupResponse({ requestId }: { requestId: string }) {
       </section>
 
       <section className="rounded-3xl border border-blue-100 bg-white p-6 shadow-sm sm:p-8">
-        {buyerWantsToPay ? (
+        {buyerWantsToPay && request.buyer_prepaid_consent ? (
           <div className="flex items-start gap-3">
             <span aria-hidden="true" className="text-xl">✅</span>
             <p className="text-sm font-semibold leading-6 text-emerald-800">
-              A buyer is willing to pay $9.99 for a TCL checkup on your vehicle.
+              {request.buyer_prepaid_consent ? "A buyer has authorized the $9.99 TCL checkup payment after you confirm availability." : "A buyer expressed interest in paying, but explicit payment consent is not recorded. You can pay for the checkup yourself if you want to proceed."}
             </p>
           </div>
         ) : (
