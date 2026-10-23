@@ -125,12 +125,6 @@ function ResultsContent() {
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-slate-50">
-      <div className="border-b border-amber-200 bg-amber-50">
-        <p className="mx-auto max-w-6xl px-5 py-2.5 text-center text-xs leading-5 text-amber-900 sm:px-6">
-          Automated preview listing details are read from the submitted listing when available. Any accountable provider claims are shown directly.
-        </p>
-      </div>
-
       <div className="mx-auto max-w-6xl px-5 py-8 sm:px-6 sm:py-10">
         <Link href="/search" className="text-sm font-medium text-blue-600 hover:underline">
           ← Check another car
