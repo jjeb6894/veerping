@@ -13,6 +13,7 @@ import { BrandLetterCycle } from "@/components/BrandLetterCycle";
 import { LogoBubble } from "@/components/LogoBubble";
 import { CheckProgress, PREVIEW_MIN_MS } from "@/components/CheckProgress";
 import { SafeProgress } from "@/components/SafeProgress";
+import { BuyerCheckupRequestForm } from "@/components/BuyerCheckupRequestForm";
 import type { TrustScoreResult } from "@/types";
 
 function isValidListingUrl(value: string): boolean {
@@ -42,6 +43,7 @@ function SearchForm() {
   const [requestDone, setRequestDone] = useState(false);
   const [loading, setLoading] = useState(false);
   const [attemptUrl, setAttemptUrl] = useState<string | null>(null);
+  const [checkupTarget, setCheckupTarget] = useState<{ url: string; title?: string } | null>(null);
   const loadId = useRef(0);
   const navigationTimer = useRef(0);
 
@@ -82,6 +84,7 @@ function SearchForm() {
       }
       const result = data as TrustScoreResult;
       storeCachedResult(result);
+      setCheckupTarget({ url: target, title: result.listing?.title });
       setRequestDone(true);
     } catch {
       if (loadId.current !== currentId) return;
@@ -104,6 +107,16 @@ function SearchForm() {
   function handlePasteSubmit(e: React.FormEvent) {
     e.preventDefault();
     openReport(url);
+  }
+
+  function openCheckupForm(value: string) {
+    const pasted = value.trim();
+    if (!pasted || !isValidListingUrl(pasted)) {
+      setError("Please enter a valid listing link.");
+      return;
+    }
+    setError(null);
+    setCheckupTarget({ url: pasted });
   }
 
   const filteredPlatforms = ADAPTERS.filter((a) =>
@@ -148,6 +161,14 @@ function SearchForm() {
               className="flex-1 rounded-xl border border-slate-200 px-4 py-3.5 text-sm shadow-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
             />
             <button
+              type="button"
+              onClick={() => openCheckupForm(url)}
+              disabled={loading}
+              className="rounded-xl border border-blue-200 bg-white px-6 py-3.5 text-sm font-semibold text-blue-700 shadow-sm transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Send Checkup Request to Seller
+            </button>
+            <button
               type="submit"
               disabled={loading}
               className="rounded-xl bg-blue-600 px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
@@ -179,6 +200,12 @@ function SearchForm() {
             </div>
           )}
         </form>
+
+        {!loading && checkupTarget && (
+          <div className="mt-6">
+            <BuyerCheckupRequestForm listingUrl={checkupTarget.url} listingTitle={checkupTarget.title} />
+          </div>
+        )}
 
         {!loading && (
           <p className="mt-3 text-xs leading-5 text-slate-500">
