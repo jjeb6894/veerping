@@ -33,6 +33,7 @@ export function BuyerCheckupRequestForm({ listingUrl, listingTitle }: {
 }) {
   const [selected, setSelected] = useState<BuyerIntent | null>(null);
   const [note, setNote] = useState("");
+  const [prepaymentConsent, setPrepaymentConsent] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [shareLink, setShareLink] = useState<string | null>(null);
@@ -49,6 +50,7 @@ export function BuyerCheckupRequestForm({ listingUrl, listingTitle }: {
         body: JSON.stringify({
           url: listingUrl,
           paymentIntent: selected === "buyer_paid",
+          prepaymentConsent: selected === "buyer_paid" && prepaymentConsent,
           note,
           title: listingTitle,
         }),
@@ -142,6 +144,22 @@ export function BuyerCheckupRequestForm({ listingUrl, listingTitle }: {
         })}
       </div>
 
+      {selected === "buyer_paid" && (
+        <label className="mt-5 flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-950">
+          <input
+            type="checkbox"
+            checked={prepaymentConsent}
+            onChange={(e) => setPrepaymentConsent(e.target.checked)}
+            className="mt-1 h-4 w-4 shrink-0 accent-emerald-600"
+            required
+          />
+          <span>
+            <span className="font-semibold">I authorize the $9.99 TCL vehicle checkup payment only after the seller confirms the vehicle is available and accepts the checkup.</span>
+            <span className="mt-1 block text-xs leading-5 text-emerald-900">This sends your consent with the request; it does not charge you now. You will be taken to secure Stripe checkout after the seller confirms availability. If the seller says the vehicle is unavailable, no payment is taken through this request.</span>
+          </span>
+        </label>
+      )}
+
       <div className="mt-5">
         <label htmlFor="buyer-note" className="text-sm font-semibold text-slate-900">
           Add a Note or Comment for the Seller (Optional)
@@ -160,7 +178,7 @@ export function BuyerCheckupRequestForm({ listingUrl, listingTitle }: {
       <button
         type="button"
         onClick={send}
-        disabled={!selected || sending || !listingUrl}
+        disabled={!selected || sending || !listingUrl || (selected === "buyer_paid" && !prepaymentConsent)}
         className="mt-4 w-full rounded-xl bg-blue-600 px-5 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {sending ? "Creating your link…" : !listingUrl ? "Paste a listing link above first" : "Send Checkup Request to Seller"}
