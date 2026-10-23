@@ -197,6 +197,14 @@ export function SellerCheckupResponse({ requestId }: { requestId: string }) {
           </div>
         )}
 
+        {buyerWantsToPay && (
+          <div className={`mt-4 rounded-xl border p-4 text-sm leading-6 ${request.buyer_prepaid_consent ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-amber-200 bg-amber-50 text-amber-900"}`}>
+            <p className="font-semibold">Buyer prepayment consent</p>
+            <p>{request.buyer_prepaid_consent ? "The buyer explicitly authorized the $9.99 checkup payment after seller availability confirmation." : "No explicit prepayment consent is recorded. Do not proceed with a buyer-paid checkout."}</p>
+            {request.buyer_prepaid_consent_at && <p className="mt-1 text-xs">Recorded: {new Date(request.buyer_prepaid_consent_at).toLocaleString()}</p>}
+          </div>
+        )}
+
         <p className="mt-5 text-base font-bold text-slate-900">Is this vehicle still available?</p>
 
         <div className="mt-4 space-y-3">
