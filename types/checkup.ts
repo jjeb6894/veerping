@@ -7,6 +7,8 @@ export interface CheckupRequestRow {
   vehicle_link: string;
   vehicle_title: string | null;
   buyer_payment_intent: boolean;
+  buyer_prepaid_consent: boolean;
+  buyer_prepaid_consent_at: string | null;
   buyer_note: string | null;
   paid_by: "buyer" | "seller" | "none";
   seller_response: SellerResponseValue | null;
