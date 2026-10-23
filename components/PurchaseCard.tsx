@@ -71,7 +71,7 @@ export function PurchaseCard({ listingUrl, title, imageUrl, disabled, disabledRe
     <aside className="rounded-3xl border border-blue-100 bg-white p-6 shadow-sm" aria-labelledby="purchase-title">
       <h2 id="purchase-title" className="text-lg font-bold text-slate-900">Unlock full Trust Score</h2>
       <p className="mt-1 text-sm leading-6 text-slate-500">
-        One-time payment. Reveals blurred stolen, crash, finance and problematic records.
+        One-time payment. Reveals blurred plates, crash, finance and prehistoric records.
       </p>
 
       <div className="mt-5 flex items-center gap-3 rounded-2xl bg-slate-50 p-3">
@@ -85,10 +85,11 @@ export function PurchaseCard({ listingUrl, title, imageUrl, disabled, disabledRe
       </div>
 
       <ul className="mt-5 space-y-2.5 text-sm text-slate-700">
-        <li className="flex gap-2"><span className="text-emerald-600" aria-hidden="true">✓</span>Full vehicle details and photos</li>
+        <li className="flex gap-2"><span className="text-emerald-600" aria-hidden="true">✓</span>Title, sellers and photos</li>
         <li className="flex gap-2"><span className="text-emerald-600" aria-hidden="true">✓</span>Stolen, crash and finance records</li>
-        <li className="flex gap-2"><span className="text-emerald-600" aria-hidden="true">✓</span>Seller and scam-report checks</li>
-        <li className="flex gap-2"><span className="text-slate-400" aria-hidden="true">·</span>Unavailable checks stay clearly marked</li>
+        <li className="flex gap-2"><span className="text-emerald-600" aria-hidden="true">✓</span>Unpaid finance</li>
+        <li className="flex gap-2"><span className="text-emerald-600" aria-hidden="true">✓</span>Import and export</li>
+        <li className="flex gap-2"><span className="text-emerald-600" aria-hidden="true">✓</span>Undisputed checks stay clearly marked</li>
       </ul>
 
       <div className="mt-5 flex items-baseline justify-between rounded-2xl border border-blue-100 bg-blue-50/60 px-4 py-3">
@@ -99,7 +100,7 @@ export function PurchaseCard({ listingUrl, title, imageUrl, disabled, disabledRe
         </span>
       </div>
       <p className="mt-2 text-xs text-slate-500">
-        £9.99 one-time. Unlocks the blurred sections of the Trust Score report.
+        £9.99 one-time. Unlocks the Trust Score and the full Trust report.
       </p>
 
       {disabled ? (
@@ -117,7 +118,7 @@ export function PurchaseCard({ listingUrl, title, imageUrl, disabled, disabledRe
         </button>
       )}
       {error && <p role="alert" className="mt-3 text-sm font-medium text-red-600">{error}</p>}
-      <p className="mt-4 text-center text-xs text-slate-400">Secured by Stripe. Cancel anytime before paying.</p>
+      <p className="mt-4 text-center text-xs text-slate-400">Accessed by 1,700+ trusted vehicle buyers</p>
     </aside>
   );
 }
