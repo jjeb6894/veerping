@@ -1,261 +1,67 @@
 "use client";
-
-import { useEffect, useState } from "react";
-import type { CheckupRequestRow } from "@/types/checkup";
-
-type Phase = "loading" | "ready" | "redirecting" | "closed" | "paid" | "error";
+import { useCallback, useEffect, useState } from "react";
+import Image from "next/image";
+import type { CheckupView, AccessRole } from "@/types/checkup";
 
 export function SellerCheckupResponse({ requestId }: { requestId: string }) {
-  const [phase, setPhase] = useState<Phase>("loading");
-  const [request, setRequest] = useState<CheckupRequestRow | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [working, setWorking] = useState<string | null>(null);
-  const [loadError, setLoadError] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const sessionId = new URLSearchParams(window.location.search).get("session_id");
-    const load = async () => {
-      if (sessionId) {
-        try {
-          const confirmResponse = await fetch(`/api/checkup-requests/${requestId}/confirm`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ sessionId }),
-          });
-          const confirmData = await confirmResponse.json().catch(() => ({}));
-          if (!cancelled && confirmData.paid === true) {
-            setPhase("paid");
-            return;
-          }
-        } catch { /* fall through to loading the request normally. */ }
-      }
-      fetch(`/api/checkup-requests/${requestId}`)
-      .then(async (response) => {
-        const data = await response.json().catch(() => ({}));
-        if (cancelled) return;
-        if (!response.ok) {
-          setError(data.error ?? "Could not load this request.");
-          setPhase("error");
-          return;
-        }
-        setRequest(data as CheckupRequestRow);
-        setPhase("ready");
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setError("Could not load this request. Check the link and try again.");
-          setPhase("error");
-        }
-      });
-    };
-
-    void load();
-    return () => { cancelled = true; };
+  const [view, setView] = useState<CheckupView | null>(null);
+  const [role, setRole] = useState<AccessRole | null>(null);
+  const [token, setToken] = useState("");
+  const [sellerToken, setSellerToken] = useState("");
+  const [error, setError] = useState("");
+  const [working, setWorking] = useState(false);
+  const load = useCallback(async (access: string) => {
+    const response = await fetch(`/api/checkup-requests/${requestId}`, { headers: { Authorization: `Bearer ${access}` }, cache: "no-store" });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error ?? "Could not open this page.");
+    setView(data);
   }, [requestId]);
-
-  async function startCheckout(paidBy: "buyer" | "seller") {
-    setWorking(paidBy);
-    setError(null);
+  useEffect(() => {
+    const fragment = new URLSearchParams(window.location.hash.slice(1));
+    const buyer = fragment.get("buyer"), seller = fragment.get("seller");
+    const access = buyer ?? seller;
+    const sessionId = new URLSearchParams(window.location.search).get("session_id");
+    const refresh = async () => {
+      if (!access) throw new Error("Open the complete private access link.");
+      if (sessionId) await fetch(`/api/checkup-requests/${requestId}/confirm`, { method: "POST", headers: { Authorization: `Bearer ${access}`, "Content-Type": "application/json" }, body: JSON.stringify({ sessionId }) });
+      await load(access);
+      setRole(buyer ? "buyer" : "seller"); setToken(access); setSellerToken(seller ?? "");
+    };
+    refresh().catch(e => setError(e.message));
+  }, [requestId, load]);
+  async function checkout() {
+    setWorking(true); setError("");
     try {
-      const response = await fetch(`/api/checkup-requests/${requestId}/checkout`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ requestId, paidBy, origin: window.location.origin }),
-      });
-      const data = await response.json().catch(() => ({}));
-      if (response.ok && typeof data.url === "string") {
-        setPhase("redirecting");
-        window.location.assign(data.url);
-        return;
-      }
-      setError(data.error ?? "Payment could not be started. Please try again.");
-      setWorking(null);
-    } catch {
-      setError("Payment could not be started. Please check your connection and try again.");
-      setWorking(null);
-    }
+      const response = await fetch(`/api/checkup-requests/${requestId}/checkout`, { method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }, body: JSON.stringify({ sellerToken }) });
+      const data = await response.json();
+      if (!response.ok || !data.url) throw new Error(data.error ?? "Could not start payment.");
+      window.location.assign(data.url);
+    } catch (e) { setError(e instanceof Error ? e.message : "Could not start payment."); setWorking(false); }
   }
-
-  async function closeRequest(sellerResponse: "unavailable" | "available_no_checkup") {
-    setWorking(sellerResponse);
-    setError(null);
-    try {
-      const response = await fetch(`/api/checkup-requests/${requestId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sellerResponse }),
-      });
-      if (response.ok) {
-        setPhase("closed");
-        return;
-      }
-      setError("Could not save your response. Please try again.");
-    } catch {
-      setError("Could not save your response. Please try again.");
-    }
-    setWorking(null);
+  async function respond(sellerResponse: string) {
+    setWorking(true); setError("");
+    const response = await fetch(`/api/checkup-requests/${requestId}`, { method: "PATCH", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }, body: JSON.stringify({ sellerResponse }) });
+    if (response.ok) await load(token); else setError("Could not save your response.");
+    setWorking(false);
   }
-
-  if (phase === "loading") {
-    return (
-      <div className="py-20 text-center" role="status" aria-live="polite">
-        <span className="mx-auto block h-8 w-8 animate-spin rounded-full border-2 border-blue-100 border-t-blue-500" aria-hidden="true" />
-        <p className="mt-4 text-sm font-medium text-slate-600">Loading the request…</p>
-      </div>
-    );
-  }
-
-  if (phase === "redirecting") {
-    return (
-      <div className="py-20 text-center" role="status" aria-live="polite">
-        <span className="mx-auto block h-8 w-8 animate-spin rounded-full border-2 border-blue-100 border-t-blue-500" aria-hidden="true" />
-        <p className="mt-4 text-sm font-medium text-slate-600">Opening secure Stripe payment…</p>
-      </div>
-    );
-  }
-
-  if (phase === "paid") {
-    return (
-      <div className="rounded-3xl border border-emerald-200 bg-emerald-50/70 p-6 text-center sm:p-8" role="status">
-        <p className="text-lg font-bold text-emerald-900">Payment confirmed — TCL checkup is starting</p>
-        <p className="mt-1 text-sm leading-6 text-slate-600">
-          The $9.99 checkup payment went through. The request is now marked as pending checkup and the
-          TCL vehicle checkup process has been triggered.
-        </p>
-      </div>
-    );
-  }
-
-  if (phase === "closed") {
-    return (
-      <div className="rounded-3xl border border-emerald-200 bg-emerald-50/70 p-6 text-center sm:p-8" role="status">
-        <p className="text-lg font-bold text-emerald-900">Response saved. Thank you.</p>
-        <p className="mt-1 text-sm leading-6 text-slate-600">
-          {request?.seller_response === "available_no_checkup"
-            ? "The buyer will be told the vehicle is still available, with no checkup needed."
-            : "The buyer will be told the vehicle is no longer available."}
-        </p>
-      </div>
-    );
-  }
-
-  if (phase === "error" || !request) {
-    return (
-      <div className="rounded-3xl border border-red-100 bg-red-50/70 p-6 text-center sm:p-8" role="alert">
-        <p className="text-lg font-semibold text-red-700">{error ?? "This request could not be loaded."}</p>
-        {loadError && <p className="mt-2 text-sm text-red-600">Please check the link you were sent.</p>}
-      </div>
-    );
-  }
-
-  const buyerWantsToPay = request.buyer_payment_intent;
-
-  return (
-    <div className="space-y-6">
-      <section className="rounded-3xl border border-blue-100 bg-white p-6 shadow-sm sm:p-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">
-          TCL vehicle checkup request
-        </p>
-        <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-          A Buyer is Requesting a TCL Vehicle Checkup
-        </h1>
-        <p className="mt-2 text-sm text-slate-600">
-          Vehicle:{" "}
-          {request.vehicle_title ? (
-            <span className="font-semibold text-slate-900">{request.vehicle_title}</span>
-          ) : (
-            <a href={request.vehicle_link} target="_blank" rel="noopener noreferrer" className="font-medium text-blue-700 underline">
-              view the listing
-            </a>
-          )}
-        </p>
-
-        {request.buyer_note && (
-          <div className="mt-5 rounded-2xl bg-slate-50 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Message from Buyer:</p>
-            <p className="mt-2 text-sm leading-6 text-slate-800">{request.buyer_note}</p>
-          </div>
-        )}
-      </section>
-
-      <section className="rounded-3xl border border-blue-100 bg-white p-6 shadow-sm sm:p-8">
-        {buyerWantsToPay ? (
-          <div className="flex items-start gap-3">
-            <span aria-hidden="true" className="text-xl">✅</span>
-            <p className="text-sm font-semibold leading-6 text-emerald-800">
-              A buyer is willing to pay $9.99 for a TCL checkup on your vehicle.
-            </p>
-          </div>
-        ) : (
-          <div className="flex items-start gap-3">
-            <span aria-hidden="true" className="text-xl">ℹ️</span>
-            <p className="text-sm font-semibold leading-6 text-blue-800">
-              A buyer is asking if this vehicle is still available. They have not committed to paying for the checkup yet.
-            </p>
-          </div>
-        )}
-
-        <p className="mt-5 text-base font-bold text-slate-900">Is this vehicle still available?</p>
-
-        <div className="mt-4 space-y-3">
-          {buyerWantsToPay ? (
-            <>
-              <button
-                type="button"
-                onClick={() => startCheckout("buyer")}
-                disabled={Boolean(working)}
-                className="w-full rounded-xl bg-emerald-600 px-5 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {working === "buyer" ? "Opening secure payment…" : "Yes, Vehicle is Still Available — Accept Checkup"}
-              </button>
-              <button
-                type="button"
-                onClick={() => closeRequest("unavailable")}
-                disabled={Boolean(working)}
-                className="w-full rounded-xl border border-red-200 bg-white px-5 py-3.5 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:opacity-60"
-              >
-                {working === "unavailable" ? "Saving…" : "No, Vehicle is No Longer Available"}
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                type="button"
-                onClick={() => startCheckout("seller")}
-                disabled={Boolean(working)}
-                className="w-full rounded-xl bg-emerald-600 px-5 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {working === "seller" ? "Opening secure payment…" : "Yes, Still Available — I'll Pay for the TCL Checkup ($9.99)"}
-              </button>
-              <button
-                type="button"
-                onClick={() => closeRequest("available_no_checkup")}
-                disabled={Boolean(working)}
-                className="w-full rounded-xl border border-blue-200 bg-white px-5 py-3.5 text-sm font-semibold text-blue-700 transition hover:bg-blue-50 disabled:opacity-60"
-              >
-                {working === "available_no_checkup" ? "Saving…" : "Yes, Still Available — No Checkup Needed"}
-              </button>
-              <button
-                type="button"
-                onClick={() => closeRequest("unavailable")}
-                disabled={Boolean(working)}
-                className="w-full rounded-xl border border-red-200 bg-white px-5 py-3.5 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:opacity-60"
-              >
-                {working === "unavailable" ? "Saving…" : "No, Vehicle is No Longer Available"}
-              </button>
-            </>
-          )}
-        </div>
-
-        {error && <p role="alert" className="mt-4 text-sm font-medium text-red-600">{error}</p>}
-
-        <p className="mt-5 text-xs leading-5 text-slate-500">
-          Payment is processed securely by Stripe. When payment is confirmed, the TCL checkup starts
-          automatically and the request status becomes pending checkup.
-        </p>
-      </section>
-    </div>
-  );
+  if (error && !view) return <p role="alert" className="rounded-2xl bg-red-50 p-6 text-red-700">{error}</p>;
+  if (!view) return <p role="status" className="py-20 text-center">Loading the seller page…</p>;
+  const sellerUrl = `${window.location.origin}/checkup/${requestId}#seller=${sellerToken}`;
+  return <div className="space-y-6">
+    {role === "buyer" && <section className="rounded-3xl border border-emerald-200 bg-emerald-50 p-6"><h1 className="text-xl font-bold text-emerald-900">Seller page created</h1><p className="mt-2 text-sm">Share this private link with the seller. No message has been delivered yet.</p><div className="mt-4 flex flex-wrap gap-3"><button onClick={() => navigator.clipboard.writeText(sellerUrl)} className="rounded-xl bg-emerald-600 px-4 py-3 text-white">Copy seller link</button><a href={sellerUrl} target="_blank" rel="noreferrer" className="rounded-xl border border-emerald-600 px-4 py-3 text-emerald-800">Open seller page</a></div></section>}
+    <section className="rounded-3xl border border-blue-100 bg-white p-6 shadow-sm"><p className="text-xs font-semibold uppercase tracking-wider text-blue-600">TCL vehicle checkup request</p><h2 className="mt-2 text-2xl font-bold">{view.vehicle.title ?? "Vehicle title unavailable"}</h2>
+      <p className="mt-3">Price: {view.vehicle.price ?? "Unavailable"}</p><p className="mt-2">Summary: {view.vehicle.summary ?? "Unavailable"}</p>
+      {view.vehicle.images.length ? <div className="mt-4 grid grid-cols-2 gap-3">{view.vehicle.images.map((src, i) => <Image key={src} src={src} alt={`Vehicle photo ${i + 1}`} width={600} height={338} unoptimized className="aspect-video w-full rounded-xl object-cover" />)}</div> : <p className="mt-3 text-sm text-slate-500">Photos unavailable</p>}
+      <a href={view.vehicle.link} target="_blank" rel="noopener noreferrer" className="mt-4 inline-block text-blue-700 underline">Open original listing</a>
+    </section>
+    <section className="rounded-3xl border border-blue-100 bg-white p-6 shadow-sm"><h2 className="font-bold">Message from potential buyer</h2><p className="mt-3 rounded-xl bg-slate-50 p-4">{view.message}</p>
+      <p className="mt-4 font-semibold">WhatsApp: {view.contact.full ?? view.contact.masked ?? "Unavailable"}</p>
+      {view.contact.whatsappUrl ? <a href={view.contact.whatsappUrl} target="_blank" rel="noopener noreferrer" className="mt-3 inline-block rounded-xl bg-emerald-600 px-4 py-3 text-white">Contact buyer on WhatsApp</a> : <p className="mt-2 text-sm text-slate-600">Full contact becomes visible after payment is verified.</p>}
+    </section>
+    <section className="rounded-3xl border border-blue-100 bg-white p-6 shadow-sm"><h2 className="font-bold">Buyer payment choice</h2><p className="mt-2">Buyer is {view.buyerWillingToPay ? "" : "not "}willing to pay for the report. This is a preference, not a completed payment.</p><p className="mt-2">Payment: {view.paymentStatus === "paid" ? `Verified, paid by ${view.paidBy}` : "Not paid"}</p><p className="mt-2">Checkup: {view.checkupStatus.replaceAll("_", " ")}</p>
+      {view.paymentStatus !== "paid" && (role === "seller" || view.buyerWillingToPay) && <button disabled={working} onClick={checkout} className="mt-4 rounded-xl bg-blue-600 px-5 py-3 text-white disabled:opacity-60">Pay for checkup as {role}</button>}
+      {role === "seller" && <div className="mt-4 flex flex-wrap gap-2">{(["available", "available_no_checkup", "unavailable"] as const).map(value => <button key={value} disabled={working} onClick={() => respond(value)} className="rounded-xl border border-blue-200 px-4 py-2">{value.replaceAll("_", " ")}</button>)}</div>}
+      {view.sellerResponse && <p className="mt-3">Seller response: {view.sellerResponse.replaceAll("_", " ")}</p>}{error && <p role="alert" className="mt-3 text-red-600">{error}</p>}
+    </section>
+  </div>;
 }
