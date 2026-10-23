@@ -31,6 +31,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Request not found." }, { status: 404 });
   }
 
+  if (checkup.seller_response === "unavailable" || checkup.seller_response === "available_no_checkup") {
+    return NextResponse.json({ error: "This request is closed and cannot be paid." }, { status: 409 });
+  }
+
+  if (body.paidBy === "buyer" && (!checkup.buyer_payment_intent || checkup.buyer_prepaid_consent !== true)) {
+    return NextResponse.json({ error: "The buyer has not explicitly authorized this payment." }, { status: 403 });
+  }
+
   const secretKey = process.env.STRIPE_SECRET_KEY;
   if (!secretKey || secretKey === "sk_test_placeholder") {
     return NextResponse.json(
@@ -63,6 +71,7 @@ export async function POST(request: Request) {
       .update({
         stripe_session_id: session.id,
         paid_by: body.paidBy,
+        seller_response: "available",
         updated_at: new Date().toISOString(),
       })
       .eq("id", requestId);
