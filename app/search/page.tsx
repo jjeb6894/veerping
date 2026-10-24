@@ -43,7 +43,6 @@ function SearchForm() {
   const [requestDone, setRequestDone] = useState(false);
   const [loading, setLoading] = useState(false);
   const [attemptUrl, setAttemptUrl] = useState<string | null>(null);
-  const [checkupTarget, setCheckupTarget] = useState<{ url: string; title?: string } | null>(null);
   const loadId = useRef(0);
   const navigationTimer = useRef(0);
 
@@ -109,16 +108,6 @@ function SearchForm() {
     openReport(url);
   }
 
-  function openCheckupForm(value: string) {
-    const pasted = value.trim();
-    if (!pasted || !isValidListingUrl(pasted)) {
-      setError("Please enter a valid listing link.");
-      return;
-    }
-    setError(null);
-    setCheckupTarget({ url: pasted });
-  }
-
   const filteredPlatforms = ADAPTERS.filter((a) =>
     query ? a.name.toLowerCase().includes(query.toLowerCase()) : true
   ).filter((a) => (platformFilter ? a.id === platformFilter : true));
@@ -151,7 +140,7 @@ function SearchForm() {
                 if (pasted) {
                   e.preventDefault();
                   setUrl(pasted);
-                  openReport(pasted);
+                  setError(null);
                 }
               }}
               aria-label="Car listing link"
@@ -160,14 +149,6 @@ function SearchForm() {
               placeholder="https://www.autotrader.co.uk/car-details/…"
               className="flex-1 rounded-xl border border-slate-200 px-4 py-3.5 text-sm shadow-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
             />
-            <button
-              type="button"
-              onClick={() => openCheckupForm(url)}
-              disabled={loading}
-              className="rounded-xl border border-blue-200 bg-white px-6 py-3.5 text-sm font-semibold text-blue-700 shadow-sm transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              Send Checkup Request to Seller
-            </button>
             <button
               type="submit"
               disabled={loading}
@@ -201,9 +182,9 @@ function SearchForm() {
           )}
         </form>
 
-        {!loading && checkupTarget && (
+        {!loading && isValidListingUrl(url.trim()) && (
           <div className="mt-6">
-            <BuyerCheckupRequestForm listingUrl={checkupTarget.url} listingTitle={checkupTarget.title} />
+            <BuyerCheckupRequestForm listingUrl={url.trim()} />
           </div>
         )}
 
