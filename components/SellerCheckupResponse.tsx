@@ -55,27 +55,11 @@ export function SellerCheckupResponse({ requestId }: { requestId: string }) {
     return () => { cancelled = true; };
   }, [requestId]);
 
-  async function startCheckout(paidBy: "buyer" | "seller") {
-    setWorking(paidBy);
+  function acceptCheckup() {
+    setWorking("buyer");
     setError(null);
-    try {
-      const response = await fetch(`/api/checkup-requests/${requestId}/checkout`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ requestId, paidBy, origin: window.location.origin }),
-      });
-      const data = await response.json().catch(() => ({}));
-      if (response.ok && typeof data.url === "string") {
-        setPhase("redirecting");
-        window.location.assign(data.url);
-        return;
-      }
-      setError(data.error ?? "Payment could not be started. Please try again.");
-      setWorking(null);
-    } catch {
-      setError("Payment could not be started. Please check your connection and try again.");
-      setWorking(null);
-    }
+    setPhase("redirecting");
+    window.location.assign(`/results?url=${encodeURIComponent(request?.vehicle_link ?? "")}`);
   }
 
   async function closeRequest(sellerResponse: "unavailable" | "available_no_checkup") {
@@ -111,7 +95,7 @@ export function SellerCheckupResponse({ requestId }: { requestId: string }) {
     return (
       <div className="py-20 text-center" role="status" aria-live="polite">
         <span className="mx-auto block h-8 w-8 animate-spin rounded-full border-2 border-blue-100 border-t-blue-500" aria-hidden="true" />
-        <p className="mt-4 text-sm font-medium text-slate-600">Opening secure Stripe payment…</p>
+        <p className="mt-4 text-sm font-medium text-slate-600">Loading the vehicle preview…</p>
       </div>
     );
   }
@@ -204,11 +188,11 @@ export function SellerCheckupResponse({ requestId }: { requestId: string }) {
             <>
               <button
                 type="button"
-                onClick={() => startCheckout("buyer")}
+                onClick={acceptCheckup}
                 disabled={Boolean(working)}
                 className="w-full rounded-xl bg-emerald-600 px-5 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {working === "buyer" ? "Opening secure payment…" : "Yes, Vehicle is Still Available — Accept Checkup"}
+                {working === "buyer" ? "Loading vehicle preview…" : "Yes, Vehicle is Still Available — Accept Checkup"}
               </button>
               <button
                 type="button"
@@ -223,11 +207,11 @@ export function SellerCheckupResponse({ requestId }: { requestId: string }) {
             <>
               <button
                 type="button"
-                onClick={() => startCheckout("seller")}
+                onClick={acceptCheckup}
                 disabled={Boolean(working)}
                 className="w-full rounded-xl bg-emerald-600 px-5 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {working === "seller" ? "Opening secure payment…" : "Yes, Still Available — I'll Pay for the TCL Checkup (£9.99)"}
+                {working === "seller" ? "Loading vehicle preview…" : "Yes, Still Available — Continue to Vehicle Preview"}
               </button>
               <button
                 type="button"
@@ -252,8 +236,8 @@ export function SellerCheckupResponse({ requestId }: { requestId: string }) {
         {error && <p role="alert" className="mt-4 text-sm font-medium text-red-600">{error}</p>}
 
         <p className="mt-5 text-xs leading-5 text-slate-500">
-          Payment is processed securely by Stripe. When payment is confirmed, the TCL checkup starts
-          automatically and the request status becomes pending checkup.
+          Accepting opens the TCL vehicle preview for this listing. The £9.99 checkup payment step is
+          not required right now and will be reintroduced later.
         </p>
       </section>
     </div>
