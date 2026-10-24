@@ -6,8 +6,11 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
  * environments without persistence (identical to the previous getDb() path).
  */
 export function getAdminSupabase(): SupabaseClient | null {
-  const url = process.env.SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !serviceKey) return null;
-  return createClient(url, serviceKey, { auth: { persistSession: false } });
+  const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY;
+  const anonKey = process.env.SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const key = serviceKey ?? anonKey;
+  if (!url || !key) return null;
+  return createClient(url, key, { auth: { persistSession: false } });
 }
