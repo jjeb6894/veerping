@@ -8,6 +8,7 @@ import { ListingDetailsEditor } from "@/components/ListingDetailsEditor";
 import { ListingPhotoPicker } from "@/components/ListingPhotoPicker";
 import { ListingGallery } from "@/components/ListingGallery";
 import { PurchaseCard } from "@/components/PurchaseCard";
+import { BuyerPrePurchaseRequest } from "@/components/BuyerPrePurchaseRequest";
 import { PaidReport } from "@/components/PaidReport";
 import { cleanEnteredListing, type EnteredListing } from "@/lib/listing-input";
 import type { TrustScoreResult } from "@/types";
@@ -201,6 +202,8 @@ function ResultsContent() {
                 View the original {result.platformName} listing
               </a>
             </section>
+
+            <BuyerPrePurchaseRequest listingUrl={result.url} />
           </div>
 
           <div className="space-y-6 lg:sticky lg:top-8">
