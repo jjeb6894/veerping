@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { BuyerIntent } from "@/types/checkup";
 
-const PRICE_LABEL = "$9.99";
+const PRICE_LABEL = "£9.99";
 
 const OPTIONS: {
   id: BuyerIntent;
@@ -13,17 +13,17 @@ const OPTIONS: {
 }[] = [
   {
     id: "buyer_paid",
-    boxTitle: "I'm a Buyer — I'll Pay for the TCL Checkup",
-    label: `I'm a Buyer & I'm Offering to Pay for the TCL Vehicle Checkup (${PRICE_LABEL})`,
+    boxTitle: "I'm a Buyer — I'm Willing to Pay for the Checkup",
+    label: `I'm willing to pay for the TCL vehicle checkup (${PRICE_LABEL}).`,
     description:
-      "I will cover the cost of the TCL vehicle checkup report. The seller will be notified that payment is ready.",
+      "This records your willingness to pay and lets the seller know. No payment is taken when you submit this request.",
   },
   {
     id: "inquiry_only",
-    boxTitle: "I'm a Buyer — Inquiring if Vehicle is Still Available",
-    label: "I'm a Buyer — Asking if This Vehicle is Still Available",
+    boxTitle: "I'm a Buyer — Interested in a Checkup",
+    label: "I'd like a vehicle checkup and may be willing to pay.",
     description:
-      "I'm interested in this vehicle and would like to know if it's still available. We can discuss the checkup payment after.",
+      "I'm interested in checking this vehicle, but I'd like to discuss the checkup and payment with the seller first.",
   },
 ];
 
@@ -69,9 +69,9 @@ export function BuyerCheckupRequestForm({ listingUrl, listingTitle }: {
   if (shareLink) {
     return (
       <section className="rounded-3xl border border-emerald-200 bg-emerald-50/70 p-5 sm:p-6" aria-labelledby="share-title">
-        <h2 id="share-title" className="text-lg font-bold text-emerald-900">Request sent — share this link with the seller</h2>
+        <h2 id="share-title" className="text-lg font-bold text-emerald-900">Request ready — share this link with the seller</h2>
         <p className="mt-1 text-sm leading-6 text-slate-600">
-          The seller will see your selection{note ? " and your note" : ""} when they open the link.
+          The seller will see your choice{note ? " and your comment" : ""} when they open the link.
         </p>
         <div className="mt-4 flex flex-col gap-2 sm:flex-row">
           <input
@@ -99,12 +99,12 @@ export function BuyerCheckupRequestForm({ listingUrl, listingTitle }: {
 
   return (
     <section className="rounded-3xl border border-blue-100 bg-white p-5 shadow-lg shadow-blue-100/60 sm:p-6" aria-labelledby="buyer-request-title">
-      <h2 id="buyer-request-title" className="text-lg font-bold text-slate-900">Before you send the link</h2>
-      <p className="mt-1 text-sm text-slate-500">
-        Choose what to tell the seller. Their response page is built from your selection.
+      <h2 id="buyer-request-title" className="text-lg font-bold text-slate-900">Buyer checkup request</h2>
+      <p className="mt-1 text-sm leading-6 text-slate-500">
+        Choose the message that best describes your interest, then add a comment for the seller before creating your shareable request link.
       </p>
 
-      <div className="mt-5 space-y-3">
+      <div className="mt-5 space-y-3" role="radiogroup" aria-label="Buyer checkup intention">
         {OPTIONS.map((option) => {
           const active = selected === option.id;
           return (
@@ -144,15 +144,15 @@ export function BuyerCheckupRequestForm({ listingUrl, listingTitle }: {
 
       <div className="mt-5">
         <label htmlFor="buyer-note" className="text-sm font-semibold text-slate-900">
-          Add a Note or Comment for the Seller (Optional)
+          Comment for the seller (optional)
         </label>
         <textarea
           id="buyer-note"
           value={note}
           onChange={(e) => setNote(e.target.value)}
           maxLength={1000}
-          rows={3}
-          placeholder="e.g. I'm very interested in this vehicle, please let me know if it's still available..."
+          rows={4}
+          placeholder="Write a message or question for the seller before you submit..."
           className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm shadow-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
         />
       </div>
@@ -163,7 +163,7 @@ export function BuyerCheckupRequestForm({ listingUrl, listingTitle }: {
         disabled={!selected || sending || !listingUrl}
         className="mt-4 w-full rounded-xl bg-blue-600 px-5 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {sending ? "Creating your link…" : !listingUrl ? "Paste a listing link above first" : "Send Checkup Request to Seller"}
+        {sending ? "Creating your link…" : !listingUrl ? "Paste a listing link above first" : "Create buyer request link"}
       </button>
       {error && <p role="alert" className="mt-3 text-sm font-medium text-red-600">{error}</p>}
     </section>
