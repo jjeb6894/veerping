@@ -4,7 +4,6 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { ReportPreviewCard } from "@/components/ReportPreviewCard";
-import { BuyerPrePurchaseRequest } from "@/components/BuyerPrePurchaseRequest";
 import { ListingDetailsEditor } from "@/components/ListingDetailsEditor";
 import { ListingPhotoPicker } from "@/components/ListingPhotoPicker";
 import { ListingGallery } from "@/components/ListingGallery";
@@ -147,8 +146,6 @@ function ResultsContent() {
                   title={vehicleTitle}
                 />
               </div>
-
-              <BuyerPrePurchaseRequest key={`buyer-request:${result.url}`} listingUrl={result.url} />
 
               <div className="mt-6 rounded-2xl bg-amber-50 p-4 text-sm leading-6 text-amber-900 ring-1 ring-amber-100">
                 {paid
