@@ -83,7 +83,6 @@ function SearchForm() {
       }
       const result = data as TrustScoreResult;
       storeCachedResult(result);
-      setCheckupTarget({ url: target, title: result.listing?.title });
       setRequestDone(true);
     } catch {
       if (loadId.current !== currentId) return;

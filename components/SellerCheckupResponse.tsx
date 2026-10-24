@@ -121,7 +121,7 @@ export function SellerCheckupResponse({ requestId }: { requestId: string }) {
       <div className="rounded-3xl border border-emerald-200 bg-emerald-50/70 p-6 text-center sm:p-8" role="status">
         <p className="text-lg font-bold text-emerald-900">Payment confirmed — TCL checkup is starting</p>
         <p className="mt-1 text-sm leading-6 text-slate-600">
-          The $9.99 checkup payment went through. The request is now marked as pending checkup and the
+          The £9.99 checkup payment went through. The request is now marked as pending checkup and the
           TCL vehicle checkup process has been triggered.
         </p>
       </div>
@@ -185,14 +185,14 @@ export function SellerCheckupResponse({ requestId }: { requestId: string }) {
           <div className="flex items-start gap-3">
             <span aria-hidden="true" className="text-xl">✅</span>
             <p className="text-sm font-semibold leading-6 text-emerald-800">
-              A buyer is willing to pay $9.99 for a TCL checkup on your vehicle.
+              A buyer is willing to pay £9.99 for a TCL checkup on your vehicle.
             </p>
           </div>
         ) : (
           <div className="flex items-start gap-3">
             <span aria-hidden="true" className="text-xl">ℹ️</span>
             <p className="text-sm font-semibold leading-6 text-blue-800">
-              A buyer is asking if this vehicle is still available. They have not committed to paying for the checkup yet.
+              A buyer is interested in a checkup for this vehicle. They have not committed to paying yet and may wish to discuss payment with you first.
             </p>
           </div>
         )}
@@ -227,7 +227,7 @@ export function SellerCheckupResponse({ requestId }: { requestId: string }) {
                 disabled={Boolean(working)}
                 className="w-full rounded-xl bg-emerald-600 px-5 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {working === "seller" ? "Opening secure payment…" : "Yes, Still Available — I'll Pay for the TCL Checkup ($9.99)"}
+                {working === "seller" ? "Opening secure payment…" : "Yes, Still Available — I'll Pay for the TCL Checkup (£9.99)"}
               </button>
               <button
                 type="button"
