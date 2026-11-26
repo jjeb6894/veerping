@@ -3,6 +3,7 @@ import { useState } from "react";
 import { getCountries, getCountryCallingCode, type CountryCode } from "libphonenumber-js/max";
 import { privatePhone } from "@/lib/checkup-contact";
 import { parseUkAutotraderList } from "@/lib/autotrader-list";
+import { isUkAutotraderVehicleLink } from "@/lib/autotrader-list";
 
 type ListingChoice = { url: string; selected: boolean };
 type CreatedRequest = { url: string; buyerUrl: string; sellerUrl: string };
@@ -16,13 +17,39 @@ export function BuyerCheckupRequestForm() {
   const [created, setCreated] = useState<CreatedRequest[]>([]);
   const [working, setWorking] = useState(false);
   const [error, setError] = useState("");
+  const [page, setPage] = useState(0);
+  const [importSummary, setImportSummary] = useState("");
+
+  async function importCsv(file?: File) {
+    if (!file) return;
+    setError("");
+    try {
+      const text = await file.text();
+      const values = text.split(/[,\r\n]+/).map(value => value.trim().replace(/^\uFEFF/, "").replace(/^"|"$/g, ""));
+      const candidates = values.filter(value => /^https?:\/\//i.test(value));
+      const valid = candidates.filter(isUkAutotraderVehicleLink);
+      const unique = [...new Set(valid)];
+      const duplicates = valid.length - unique.length;
+      const invalid = candidates.length - valid.length;
+      if (!unique.length) throw new Error("No valid AutoTrader UK vehicle links were found in this CSV.");
+      setListings(previous => {
+        const existing = new Set(previous.map(item => item.url));
+        const added = unique.filter(url => !existing.has(url)).map(url => ({ url, selected: false }));
+        setImportSummary(`Imported ${added.length} new listings · ${duplicates} duplicate rows · ${invalid} unsupported links`);
+        return [...previous, ...added];
+      });
+      setPage(0);
+    } catch (failure) { setError(failure instanceof Error ? failure.message : "Could not read this CSV."); }
+  }
 
   function addListings() {
     const parsed = parseUkAutotraderList(pasted);
     if (!parsed.length) { setError("Paste at least one AutoTrader UK vehicle listing link."); return; }
     setListings(previous => {
       const existing = new Set(previous.map(item => item.url));
-      return [...previous, ...parsed.filter(url => !existing.has(url)).map(url => ({ url, selected: true }))];
+      const added = parsed.filter(url => !existing.has(url)).map(url => ({ url, selected: false }));
+      setImportSummary(`Added ${added.length} listings from pasted links`);
+      return [...previous, ...added];
     });
     setPasted(""); setError("");
   }
@@ -79,13 +106,18 @@ export function BuyerCheckupRequestForm() {
       <p className="mt-2 text-xs text-slate-500">Your name is not shown. The seller sees only your country code and first three digits until payment is verified.</p>
     </div>
     <label htmlFor="listing-links" className="mt-5 block text-sm font-semibold text-slate-900">Your AutoTrader UK vehicle list</label>
+    <label htmlFor="csv-file" className="mt-3 block text-sm text-slate-700">Import your CSV file</label>
+    <input id="csv-file" type="file" accept=".csv,text/csv" onChange={event => void importCsv(event.target.files?.[0])} className="mt-2 block w-full rounded-xl border border-slate-200 p-3 text-sm" />
+    {importSummary && <p role="status" className="mt-2 text-sm text-slate-600">{importSummary} · Ollama unavailable; vehicle details will use source data and deterministic parsing.</p>}
     <textarea id="listing-links" value={pasted} onChange={e => setPasted(e.target.value)} rows={4} className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="Paste one AutoTrader UK listing link per line" />
     <button type="button" onClick={addListings} className="mt-2 rounded-xl border border-blue-200 px-4 py-2 text-sm font-semibold text-blue-700">Add listings to choose from</button>
-    {listings.length > 0 && <fieldset className="mt-5 space-y-2"><legend className="text-sm font-semibold">Choose the vehicles you want to see</legend>
-      {listings.map((item, index) => <label key={item.url} className="flex items-start gap-3 rounded-xl border border-slate-200 p-3 text-sm">
-        <input type="checkbox" checked={item.selected} onChange={e => setListings(previous => previous.map((entry, i) => i === index ? { ...entry, selected: e.target.checked } : entry))} className="mt-1 h-4 w-4" />
+    {listings.length > 0 && <fieldset className="mt-5 space-y-2"><legend className="text-sm font-semibold">Choose the vehicles you want to see ({listings.filter(i => i.selected).length} selected of {listings.length})</legend>
+      <button type="button" onClick={() => { const visible = new Set(listings.slice(page * 50, page * 50 + 50).map(item => item.url)); setListings(previous => previous.map(item => visible.has(item.url) ? { ...item, selected: !previous.filter(v => visible.has(v.url)).every(v => v.selected) } : item)); }} className="rounded-lg border px-3 py-2 text-sm">Select / clear this page</button>
+      {listings.slice(page * 50, page * 50 + 50).map((item, index) => <label key={item.url} className="flex items-start gap-3 rounded-xl border border-slate-200 p-3 text-sm">
+        <input type="checkbox" checked={item.selected} onChange={e => setListings(previous => previous.map(entry => entry.url === item.url ? { ...entry, selected: e.target.checked } : entry))} className="mt-1 h-4 w-4" />
         <span className="break-all">{item.url}{created.some(result => result.url === item.url) && <span className="ml-2 text-emerald-700">Prepared</span>}</span>
       </label>)}
+      <div className="flex items-center justify-between pt-2 text-sm"><button type="button" disabled={page === 0} onClick={() => setPage(p => p - 1)} className="rounded-lg border px-3 py-2 disabled:opacity-40">Previous</button><span>Page {page + 1} of {Math.ceil(listings.length / 50)}</span><button type="button" disabled={(page + 1) * 50 >= listings.length} onClick={() => setPage(p => p + 1)} className="rounded-lg border px-3 py-2 disabled:opacity-40">Next</button></div>
     </fieldset>}
     <p className="mt-4 text-xs text-slate-500">We’ll prepare a separate request to view each selected vehicle. No seller receives a message until you choose them in the share options and send it.</p>
     <button disabled={working} type="submit" className="mt-5 w-full rounded-xl bg-blue-600 px-5 py-3.5 text-sm font-semibold text-white disabled:opacity-60">{working ? "Preparing requests…" : "Prepare requests to view selected vehicles"}</button>
