@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test": "node --experimental-strip-types tests/listing-parser.test.mjs && node --experimental-strip-types tests/listing-input.test.mjs && node --experimental-strip-types tests/vin-decoder.test.mjs && node --test --experimental-strip-types tests/stripe-payment.test.mjs && node --test --experimental-strip-types tests/checkup-contact.test.mjs && node --test --experimental-strip-types tests/checkup-route-auth.test.mjs && node --test --experimental-strip-types tests/checkup-payment-validation.test.mjs && node --test --experimental-strip-types tests/autotrader-list.test.mjs",
+    "test": "node --experimental-strip-types tests/listing-parser.test.mjs && node --experimental-strip-types tests/listing-input.test.mjs && node --experimental-strip-types tests/vin-decoder.test.mjs && node --test --experimental-strip-types tests/stripe-payment.test.mjs && node --test --experimental-strip-types tests/checkup-contact.test.mjs && node --test --experimental-strip-types tests/checkup-route-auth.test.mjs && node --test --experimental-strip-types tests/checkup-payment-validation.test.mjs && node --test --experimental-strip-types tests/autotrader-list.test.mjs && node --test --experimental-strip-types tests/ollama-vehicle.test.mjs",
     "typecheck": "tsc --noEmit",
     "worker:build": "opennextjs-cloudflare build",
     "preview": "npm run worker:build && opennextjs-cloudflare preview",

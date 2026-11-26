@@ -1,6 +1,7 @@
 import { fetchAutoTraderListing } from "@/lib/listing-parser";
 import { renderAutoTraderListing } from "@/lib/rendered-autotrader";
 import { isUkAutotraderVehicleLink } from "@/lib/autotrader-list";
+import { normalizeVehicleDetails } from "@/lib/ollama-vehicle";
 import { getAdminSupabase } from "@/lib/supabase-admin";
 import { privatePhone, redactContact } from "@/lib/checkup-contact";
 import { accessToken, json, tokenHash } from "@/lib/checkup-server";
@@ -21,12 +22,16 @@ export async function POST(request: Request) {
     if (listing.sourceStatus === "blocked" || listing.sourceStatus === "javascript_required") {
       listing = await renderAutoTraderListing(url.toString(), request.headers.get("cf-connecting-ip")) ?? listing;
     }
+    const vehicle = await normalizeVehicleDetails({
+      title: listing.title, price: listing.price,
+      summary: [listing.year, listing.make, listing.model, listing.mileage].filter(Boolean).join(" · "),
+    });
     const buyerToken = accessToken(), sellerToken = accessToken();
     const { data: id, error } = await db.rpc("create_private_checkup", {
       request_data: {
-        vehicle_link: url.toString(), vehicle_title: redactContact(listing?.title),
-        vehicle_price: redactContact(listing?.price),
-        vehicle_summary: redactContact([listing?.year, listing?.make, listing?.model, listing?.mileage].filter(Boolean).join(" · ")),
+        vehicle_link: url.toString(), vehicle_title: redactContact(vehicle.title),
+        vehicle_price: redactContact(vehicle.price),
+        vehicle_summary: redactContact(vehicle.summary),
         vehicle_images: (listing?.images ?? []).filter(image => { try { return new URL(image).protocol === "https:"; } catch { return false; } }).slice(0, 8),
         buyer_name: null, buyer_payment_intent: body.paymentIntent,
         buyer_access_hash: tokenHash(buyerToken), seller_access_hash: tokenHash(sellerToken), contact_masked: contact.masked,
