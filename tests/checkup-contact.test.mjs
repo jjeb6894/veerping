@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { buyerName, buyerMessage, privatePhone, redactContact } from "../lib/checkup-contact.ts";
 
-test("automatic buyer message uses a valid name without accepting contact in the name", () => {
-  assert.equal(buyerMessage(buyerName(" Amina ")), "Hi, I’m Amina. Is this vehicle still available? Please let me know and contact me on WhatsApp.");
+test("automatic viewing message does not reveal a name", () => {
+  assert.equal(buyerMessage(), "Hi, is this vehicle still available? I’d like to see it. Please let me know when I can view it, and contact me on WhatsApp.");
   for (const name of ["Amina +44 7700 900123", "Amina wa.me/447700900123", "Amina seven seven zero zero"]) {
     assert.throws(() => buyerName(name));
   }

@@ -1,5 +1,6 @@
 import Stripe from "stripe";
 import { getAdminSupabase } from "@/lib/supabase-admin";
+import { matchesCheckupPayment } from "@/lib/checkup-payment-validation";
 
 export function stripeClient() {
   const key = process.env.STRIPE_SECRET_KEY;
@@ -13,12 +14,7 @@ export async function verifyCheckupSession(stripe: Stripe, sessionId: string) {
   const attemptId = session.metadata?.attemptId;
   if (!attemptId) return false;
   const { data: attempt, error } = await db.from("checkup_payments").select("id,request_id,payer,stripe_session_id,price_id,product_id,amount,currency,livemode,status").eq("id", attemptId).maybeSingle();
-  if (error || !attempt || attempt.stripe_session_id !== session.id || session.client_reference_id !== attempt.request_id ||
-      session.metadata?.product !== "tcl-vehicle-checkup" || session.metadata?.checkupRequestId !== attempt.request_id ||
-      session.metadata?.paidBy !== attempt.payer || session.mode !== "payment" || session.payment_status !== "paid" ||
-      session.amount_total !== attempt.amount || session.currency !== attempt.currency || session.livemode !== attempt.livemode ||
-      session.line_items?.data.length !== 1 || session.line_items.data[0].price?.id !== attempt.price_id ||
-      session.line_items.data[0].price?.product !== attempt.product_id || session.line_items.data[0].quantity !== 1) return false;
+  if (error || !attempt || !matchesCheckupPayment(session, attempt)) return false;
   const { data: fulfilled, error: fulfillmentError } = await db.rpc("fulfill_checkup_payment", { attempt_id: attempt.id, session_id: session.id });
   if (fulfillmentError) throw fulfillmentError;
   return fulfilled === true;

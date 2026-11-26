@@ -1,7 +1,7 @@
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { getAdminSupabase } from "@/lib/supabase-admin";
-import { buyerMessage, buyerName, redactContact } from "@/lib/checkup-contact";
+import { buyerMessage, redactContact } from "@/lib/checkup-contact";
 import type { AccessRole, CheckupView } from "@/types/checkup";
 
 export const noStore = { "Cache-Control": "private, no-store, max-age=0", "Referrer-Policy": "no-referrer" };
@@ -28,8 +28,6 @@ export async function authorizeCheckup(request: Request, id: string) {
 export async function checkupView(auth: Awaited<ReturnType<typeof authorizeCheckup>>): Promise<CheckupView> {
   if (!auth.row || !auth.db || !auth.role) throw new Error("Unauthorized");
   const { row, db, role } = auth;
-  let name = "a potential buyer";
-  try { name = buyerName(row.buyer_name); } catch { /* Never publish legacy notes or unsafe names. */ }
   const contact: CheckupView["contact"] = { masked: row.contact_masked };
   if (role === "seller" && row.payment_status === "paid") {
     const { data, error } = await db.from("checkup_request_contacts").select("phone_e164").eq("request_id", row.id).maybeSingle();
@@ -42,7 +40,7 @@ export async function checkupView(auth: Awaited<ReturnType<typeof authorizeCheck
   return {
     id: row.id, role,
     vehicle: { link: row.vehicle_link, title: redactContact(row.vehicle_title), price: redactContact(row.vehicle_price), summary: redactContact(row.vehicle_summary), images: row.vehicle_images ?? [] },
-    buyerWillingToPay: row.buyer_payment_intent, message: buyerMessage(name), contact,
+    buyerWillingToPay: row.buyer_payment_intent, message: buyerMessage(), contact,
     paymentStatus: row.payment_status, paidBy: row.payment_status === "paid" ? row.paid_by : "none",
     checkupStatus: row.checkup_status, sellerResponse: row.seller_response,
   };

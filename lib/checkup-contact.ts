@@ -10,8 +10,8 @@ export function buyerName(value: unknown): string {
   }
   return name;
 }
-export function buyerMessage(name: string): string {
-  return `Hi, I’m ${name}. Is this vehicle still available? Please let me know and contact me on WhatsApp.`;
+export function buyerMessage(): string {
+  return "Hi, is this vehicle still available? I’d like to see it. Please let me know when I can view it, and contact me on WhatsApp.";
 }
 export function privatePhone(country: unknown, value: unknown) {
   if (typeof country !== "string" || !getCountries().includes(country as CountryCode) ||

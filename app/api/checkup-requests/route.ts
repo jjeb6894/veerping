@@ -1,21 +1,26 @@
-import { detectPlatform } from "@/lib/adapters";
 import { fetchAutoTraderListing } from "@/lib/listing-parser";
+import { renderAutoTraderListing } from "@/lib/rendered-autotrader";
+import { isUkAutotraderVehicleLink } from "@/lib/autotrader-list";
 import { getAdminSupabase } from "@/lib/supabase-admin";
-import { buyerName, privatePhone, redactContact } from "@/lib/checkup-contact";
+import { privatePhone, redactContact } from "@/lib/checkup-contact";
 import { accessToken, json, tokenHash } from "@/lib/checkup-server";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
   try {
     if (typeof body.paymentIntent !== "boolean") return json({ error: "Choose a payment preference." }, 400);
-    const name = buyerName(body.name);
     const contact = privatePhone(body.country, body.whatsapp);
     const url = new URL(body.url);
-    if (url.protocol !== "https:" || url.username || url.password || url.port || !detectPlatform(url.toString())) return json({ error: "Enter a supported HTTPS listing link." }, 422);
+    if (!isUkAutotraderVehicleLink(url.toString())) {
+      return json({ error: "Enter an AutoTrader UK vehicle listing link." }, 422);
+    }
     url.search = ""; url.hash = "";
     const db = getAdminSupabase();
     if (!db) return json({ error: "Request storage is not connected." }, 503);
-    const listing = detectPlatform(url.toString())?.id === "autotrader" ? await fetchAutoTraderListing(url.toString()) : undefined;
+    let listing = await fetchAutoTraderListing(url.toString());
+    if (listing.sourceStatus === "blocked" || listing.sourceStatus === "javascript_required") {
+      listing = await renderAutoTraderListing(url.toString(), request.headers.get("cf-connecting-ip")) ?? listing;
+    }
     const buyerToken = accessToken(), sellerToken = accessToken();
     const { data: id, error } = await db.rpc("create_private_checkup", {
       request_data: {
@@ -23,7 +28,7 @@ export async function POST(request: Request) {
         vehicle_price: redactContact(listing?.price),
         vehicle_summary: redactContact([listing?.year, listing?.make, listing?.model, listing?.mileage].filter(Boolean).join(" · ")),
         vehicle_images: (listing?.images ?? []).filter(image => { try { return new URL(image).protocol === "https:"; } catch { return false; } }).slice(0, 8),
-        buyer_name: name, buyer_payment_intent: body.paymentIntent,
+        buyer_name: null, buyer_payment_intent: body.paymentIntent,
         buyer_access_hash: tokenHash(buyerToken), seller_access_hash: tokenHash(sellerToken), contact_masked: contact.masked,
       }, phone: contact.full,
     });
