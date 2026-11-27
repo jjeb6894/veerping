@@ -1,19 +1,13 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { detectPlatform } from "@/lib/adapters";
-import { fetchAutoTraderListing } from "@/lib/listing-parser";
-import { renderAutoTraderListing } from "@/lib/rendered-autotrader";
-import { decodeVin } from "@/lib/vin-decoder";
-import { aggregateScore, runCheckPipeline, tierForScore } from "@/lib/scoring";
 import type { TrustScoreResult } from "@/types";
 
 /**
  * Prepare a reusable report preview for a pasted listing URL.
  *
- * AutoTrader pages are read from their public HTML metadata so the preview
- * can show the vehicle details and photos that the source exposes.
- * A deterministic trust score is always generated from the URL so the UI
- * can display a score and enable payment.
+ * This endpoint deliberately does not copy AutoTrader content or fabricate
+ * results from an unverified URL. No real vehicle-history provider is wired.
  */
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as { url?: string };
@@ -31,29 +25,19 @@ export async function POST(request: Request) {
     );
   }
 
-  let listing = adapter.id === "autotrader"
-    ? await fetchAutoTraderListing(url)
-    : undefined;
-  if (listing?.sourceStatus === "blocked" || listing?.sourceStatus === "javascript_required") {
-    listing = await renderAutoTraderListing(url, request.headers.get("cf-connecting-ip")) ?? listing;
-  }
-
-  const checks = runCheckPipeline(url, adapter.checks);
-  const score = aggregateScore(checks);
-  const { tier, label: tierLabel } = tierForScore(score);
-
+  // AutoTrader page content is not copied into paid reports without permission.
   const result: TrustScoreResult = {
     id: randomUUID(),
     url,
     platformId: adapter.id,
     platformName: adapter.name,
-    score,
-    tier,
-    tierLabel,
-    checks,
-    listing,
-    vinDecode: listing?.vin ? await decodeVin(listing.vin) : undefined,
-    photoUrl: listing?.images?.[0],
+    score: null,
+    tier: null,
+    tierLabel: null,
+    checks: [],
+    listing: undefined,
+    vinDecode: undefined,
+    photoUrl: undefined,
     createdAt: new Date().toISOString(),
   };
 

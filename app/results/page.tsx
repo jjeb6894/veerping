@@ -5,10 +5,7 @@ import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { ReportPreviewCard } from "@/components/ReportPreviewCard";
 import { ListingDetailsEditor } from "@/components/ListingDetailsEditor";
-import { ListingPhotoPicker } from "@/components/ListingPhotoPicker";
 import { ListingGallery } from "@/components/ListingGallery";
-import { PurchaseCard } from "@/components/PurchaseCard";
-import { PaidReport } from "@/components/PaidReport";
 import { cleanEnteredListing, type EnteredListing } from "@/lib/listing-input";
 import type { TrustScoreResult } from "@/types";
 
@@ -32,11 +29,8 @@ function storedListingDetails(url: string | null): EnteredListing {
 function ResultsContent() {
   const searchParams = useSearchParams();
   const url = searchParams.get("url");
-  const sessionId = searchParams.get("session_id");
   const checkoutCancelled = searchParams.get("checkout") === "cancelled";
   const [result, setResult] = useState<TrustScoreResult | null>(() => cachedResult(url));
-  const [paid, setPaid] = useState(false);
-  const [paymentChecking, setPaymentChecking] = useState(Boolean(sessionId && url));
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(() => !cachedResult(url));
   const [enteredByUrl, setEnteredByUrl] = useState<Record<string, EnteredListing>>(() =>
@@ -75,25 +69,6 @@ function ResultsContent() {
       cancelled = true;
     };
   }, [url]);
-
-  useEffect(() => {
-    if (!sessionId || !url) return;
-    let cancelled = false;
-    fetch(`/api/stripe/session?session_id=${encodeURIComponent(sessionId)}&url=${encodeURIComponent(url)}`)
-      .then((response) => (response.ok ? response.json() : null))
-      .then((data) => {
-        if (!cancelled && data?.paid === true) setPaid(true);
-      })
-      .catch(() => undefined)
-      .finally(() => {
-        if (!cancelled) setPaymentChecking(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [sessionId, url]);
-
-  const canPurchase = Boolean(result && typeof result.score === "number" && !paid);
 
   if (loading) {
     return (
@@ -149,9 +124,7 @@ function ResultsContent() {
 
 
               <div className="mt-6 rounded-2xl bg-amber-50 p-4 text-sm leading-6 text-amber-900 ring-1 ring-amber-100">
-                {paid
-                  ? "Payment confirmed. Full Trust Score details are now unlocked."
-                  : "This preview shows the Trust Score and public listing details. Sensitive records (stolen, crash, finance) stay blurred until you unlock them for £9.99."}
+                Listing details, vehicle history, and a trust score are unavailable until verified data sources are connected.
               </div>
             </section>
 
@@ -170,10 +143,6 @@ function ResultsContent() {
                 catch { /* The report still displays the details if browser storage is unavailable. */ }
               }} />
             </section>
-
-            {result.platformId === "autotrader" && <ListingPhotoPicker key={`photo-picker:${result.url}`} />}
-
-            {paid && <PaidReport result={result} />}
 
             <section className="rounded-3xl border border-blue-100 bg-white p-6 shadow-sm sm:p-8" aria-labelledby="summary-title">
               <h2 id="summary-title" className="text-lg font-bold text-slate-900">Vehicle summary</h2>
@@ -195,7 +164,7 @@ function ResultsContent() {
                 ))}
               </div>
               <p className="mt-3 text-xs leading-5 text-slate-500">
-                Details were read from the public listing page metadata.
+                Details are not fetched or copied from the source. Add information only if you have permission to use it.
               </p>
               <a href={result.url} target="_blank" rel="noopener noreferrer"
                 className="mt-4 inline-block text-sm font-medium text-blue-700 underline">
@@ -205,26 +174,14 @@ function ResultsContent() {
           </div>
 
           <div className="space-y-6 lg:sticky lg:top-8">
-            {!paid && (
-              <PurchaseCard
-                listingUrl={result.url}
-                title={vehicleTitle}
-                imageUrl={images[0]}
-                disabled={!canPurchase}
-              />
-            )}
-            {paymentChecking && (
-              <p className="text-center text-xs text-slate-500">Confirming your payment…</p>
-            )}
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <p className="text-sm font-semibold text-slate-900">Unlock the full report</p>
+              <p className="text-sm font-semibold text-slate-900">No report payment available</p>
               <p className="mt-1 text-sm leading-6 text-slate-500">
-                £9.99 unlocks the report. Stolen, crash, finance and prehistoric records. You can also{" "}
-                <Link href={`/claims?url=${encodeURIComponent(result.url)}`} className="font-medium text-blue-600 hover:underline">
-                  file a claim
-                </Link>{" "}
-                for pending blocked listings.
+                This page does not have verified vehicle-history data to sell. Use the original listing to contact the seller.
               </p>
+              <a href={result.url} target="_blank" rel="noopener noreferrer" className="mt-4 inline-block text-sm font-medium text-blue-700 underline">
+                Open the original listing
+              </a>
             </div>
           </div>
         </div>

@@ -1,9 +1,6 @@
-import { fetchAutoTraderListing } from "@/lib/listing-parser";
-import { renderAutoTraderListing } from "@/lib/rendered-autotrader";
-import { isUkAutotraderAssetUrl, isUkAutotraderVehicleLink } from "@/lib/autotrader-list";
-import { normalizeVehicleDetails } from "@/lib/ollama-vehicle";
+import { isUkAutotraderVehicleLink } from "@/lib/autotrader-list";
 import { getAdminSupabase } from "@/lib/supabase-admin";
-import { privatePhone, redactContact } from "@/lib/checkup-contact";
+import { privatePhone } from "@/lib/checkup-contact";
 import { accessToken, json, tokenHash } from "@/lib/checkup-server";
 
 export async function POST(request: Request) {
@@ -18,21 +15,13 @@ export async function POST(request: Request) {
     url.search = ""; url.hash = "";
     const db = getAdminSupabase();
     if (!db) return json({ error: "Request storage is not connected." }, 503);
-    let listing = await fetchAutoTraderListing(url.toString());
-    if (listing.sourceStatus === "blocked" || listing.sourceStatus === "javascript_required") {
-      listing = await renderAutoTraderListing(url.toString(), request.headers.get("cf-connecting-ip")) ?? listing;
-    }
-    const vehicle = await normalizeVehicleDetails({
-      title: listing.title, price: listing.price,
-      summary: [listing.year, listing.make, listing.model, listing.mileage].filter(Boolean).join(" · "),
-    });
     const buyerToken = accessToken(), sellerToken = accessToken();
     const { data: id, error } = await db.rpc("create_private_checkup", {
       request_data: {
-        vehicle_link: url.toString(), vehicle_title: redactContact(vehicle.title),
-        vehicle_price: redactContact(vehicle.price),
-        vehicle_summary: redactContact(vehicle.summary),
-        vehicle_images: (listing?.images ?? []).filter(isUkAutotraderAssetUrl).slice(0, 8),
+        vehicle_link: url.toString(), vehicle_title: null,
+        vehicle_price: null,
+        vehicle_summary: null,
+        vehicle_images: [],
         buyer_name: null, buyer_payment_intent: body.paymentIntent,
         buyer_access_hash: tokenHash(buyerToken), seller_access_hash: tokenHash(sellerToken), contact_masked: contact.masked,
       }, phone: contact.full,

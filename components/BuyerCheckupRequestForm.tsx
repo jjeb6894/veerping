@@ -93,10 +93,10 @@ export function BuyerCheckupRequestForm() {
   }
 
   return <div className="space-y-6"><form onSubmit={submit} className="mt-10 rounded-3xl border border-blue-100 bg-white p-5 shadow-lg shadow-blue-100/60 sm:p-6">
-    <fieldset className="space-y-3"><legend className="mb-3 text-sm font-semibold text-slate-900">Who is willing to pay for the report?</legend>
+    <fieldset className="space-y-3"><legend className="mb-3 text-sm font-semibold text-slate-900">Would you pay the contact-access fee?</legend>
       {([true, false] as const).map(value => <label key={String(value)} className={`flex cursor-pointer items-center gap-3 rounded-xl border p-4 text-sm font-semibold ${choice === value ? "border-emerald-500 bg-emerald-50" : "border-slate-200"}`}>
         <input type="radio" name="payment-choice" required checked={choice === value} onChange={() => setChoice(value)} className="h-5 w-5 accent-emerald-600" />
-        <span aria-hidden="true" className="w-4">{choice === value ? "✓" : ""}</span>Buyer is {value ? "" : "not "}willing to pay for the report.
+        <span aria-hidden="true" className="w-4">{choice === value ? "✓" : ""} </span>{value ? "Yes, I would pay to unlock the WhatsApp contact." : "No, I would not pay for contact access."}
       </label>)}
     </fieldset>
     <div className="mt-5"><label htmlFor="whatsapp" className="text-sm font-semibold text-slate-900">Your WhatsApp number</label>

@@ -40,7 +40,7 @@ export async function checkupView(auth: Awaited<ReturnType<typeof authorizeCheck
   return {
     id: row.id, role,
     vehicle: { link: row.vehicle_link, title: redactContact(row.vehicle_title), price: redactContact(row.vehicle_price), summary: redactContact(row.vehicle_summary), images: row.vehicle_images ?? [] },
-    buyerWillingToPay: row.buyer_payment_intent, message: buyerMessage(row.id), contact,
+    buyerWillingToPay: row.buyer_payment_intent, message: buyerMessage(), contact,
     paymentStatus: row.payment_status, paidBy: row.payment_status === "paid" ? row.paid_by : "none",
     checkupStatus: row.checkup_status, sellerResponse: row.seller_response,
   };
