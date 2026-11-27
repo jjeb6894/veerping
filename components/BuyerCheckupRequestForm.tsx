@@ -88,7 +88,7 @@ export function BuyerCheckupRequestForm() {
     <label htmlFor="listing-links" className="mt-5 block text-sm font-semibold text-slate-900">Your AutoTrader UK vehicle list</label>
     <label htmlFor="csv-file" className="mt-3 block text-sm text-slate-700">Import your CSV file</label>
     <input id="csv-file" type="file" accept=".csv,text/csv" onChange={event => void importCsv(event.target.files?.[0])} className="mt-2 block w-full rounded-xl border border-slate-200 p-3 text-sm" />
-    {importSummary && <p role="status" className="mt-2 text-sm text-slate-600">{importSummary} . Listing details are not fetched.</p>}
+    {importSummary && <p role="status" className="mt-2 text-sm text-slate-600">{importSummary}. Listing details are not fetched.</p>}
     <textarea id="listing-links" value={pasted} onChange={e => setPasted(e.target.value)} rows={4} className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="Paste one AutoTrader UK listing link per line" />
     <button type="button" onClick={addListings} className="mt-2 rounded-xl border border-blue-200 px-4 py-2 text-sm font-semibold text-blue-700">Add listings to choose from</button>
     {listings.length > 0 && <fieldset className="mt-5 space-y-2"><legend className="text-sm font-semibold">Choose the vehicles you want to see ({listings.filter(i => i.selected).length} selected of {listings.length})</legend>
