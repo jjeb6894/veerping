@@ -2,8 +2,7 @@
 import { useState } from "react";
 import { getCountries, getCountryCallingCode, type CountryCode } from "libphonenumber-js/max";
 import { privatePhone } from "@/lib/checkup-contact";
-import { parseUkAutotraderList } from "@/lib/autotrader-list";
-import { isUkAutotraderVehicleLink } from "@/lib/autotrader-list";
+import { parseAutoTraderCsv, parseUkAutotraderList } from "@/lib/autotrader-list";
 
 type ListingChoice = { url: string; selected: boolean };
 type CreatedRequest = { url: string; buyerUrl: string; sellerUrl: string };
@@ -24,18 +23,12 @@ export function BuyerCheckupRequestForm() {
     if (!file) return;
     setError("");
     try {
-      const text = await file.text();
-      const values = text.split(/[,\r\n]+/).map(value => value.trim().replace(/^\uFEFF/, "").replace(/^"|"$/g, ""));
-      const candidates = values.filter(value => /^https?:\/\//i.test(value));
-      const valid = candidates.filter(isUkAutotraderVehicleLink);
-      const unique = [...new Set(valid)];
-      const duplicates = valid.length - unique.length;
-      const invalid = candidates.length - valid.length;
-      if (!unique.length) throw new Error("No valid AutoTrader UK vehicle links were found in this CSV.");
+      const { urls, duplicates, unsupported } = parseAutoTraderCsv(await file.text());
       setListings(previous => {
         const existing = new Set(previous.map(item => item.url));
-        const added = unique.filter(url => !existing.has(url)).map(url => ({ url, selected: false }));
-        setImportSummary(`Imported ${added.length} new listings · ${duplicates} duplicate rows · ${invalid} unsupported links`);
+        const added = urls.filter(url => !existing.has(url)).map(url => ({ url, selected: false }));
+        const alreadyImported = urls.length - added.length;
+        setImportSummary(`Added ${added.length} vehicle links · ${duplicates + alreadyImported} duplicates · ${unsupported} unsupported rows`);
         return [...previous, ...added];
       });
       setPage(0);
@@ -77,26 +70,13 @@ export function BuyerCheckupRequestForm() {
     finally { setWorking(false); }
   }
 
-  async function share(result: CreatedRequest) {
-    const sellerLink = new URL(result.sellerUrl, window.location.origin).toString();
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: "Request to view a vehicle", text: "I’d like to see this vehicle. Please open my request and let me know when I can view it.", url: sellerLink });
-      } else {
-        await navigator.clipboard.writeText(sellerLink);
-        setError("The seller link was copied. Choose the intended seller and send it through your messaging app.");
-      }
-    } catch (failure) {
-      if (failure instanceof DOMException && failure.name === "AbortError") return;
-      setError("Could not share this request. Copy its seller link instead.");
-    }
-  }
+
 
   return <div className="space-y-6"><form onSubmit={submit} className="mt-10 rounded-3xl border border-blue-100 bg-white p-5 shadow-lg shadow-blue-100/60 sm:p-6">
     <fieldset className="space-y-3"><legend className="mb-3 text-sm font-semibold text-slate-900">Would you pay the contact-access fee?</legend>
       {([true, false] as const).map(value => <label key={String(value)} className={`flex cursor-pointer items-center gap-3 rounded-xl border p-4 text-sm font-semibold ${choice === value ? "border-emerald-500 bg-emerald-50" : "border-slate-200"}`}>
         <input type="radio" name="payment-choice" required checked={choice === value} onChange={() => setChoice(value)} className="h-5 w-5 accent-emerald-600" />
-        <span aria-hidden="true" className="w-4">{choice === value ? "✓" : ""} </span>{value ? "Yes, I would pay to unlock the WhatsApp contact." : "No, I would not pay for contact access."}
+        <span aria-hidden="true" className="w-4">{choice === value ? "\u2713" : ""} </span>{value ? "Yes, I would pay to unlock the WhatsApp contact." : "No, I would not pay for contact access."}
       </label>)}
     </fieldset>
     <div className="mt-5"><label htmlFor="whatsapp" className="text-sm font-semibold text-slate-900">Your WhatsApp number</label>
@@ -108,7 +88,7 @@ export function BuyerCheckupRequestForm() {
     <label htmlFor="listing-links" className="mt-5 block text-sm font-semibold text-slate-900">Your AutoTrader UK vehicle list</label>
     <label htmlFor="csv-file" className="mt-3 block text-sm text-slate-700">Import your CSV file</label>
     <input id="csv-file" type="file" accept=".csv,text/csv" onChange={event => void importCsv(event.target.files?.[0])} className="mt-2 block w-full rounded-xl border border-slate-200 p-3 text-sm" />
-    {importSummary && <p role="status" className="mt-2 text-sm text-slate-600">{importSummary} · Ollama unavailable; vehicle details will use source data and deterministic parsing.</p>}
+    {importSummary && <p role="status" className="mt-2 text-sm text-slate-600">{importSummary} . Listing details are not fetched.</p>}
     <textarea id="listing-links" value={pasted} onChange={e => setPasted(e.target.value)} rows={4} className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="Paste one AutoTrader UK listing link per line" />
     <button type="button" onClick={addListings} className="mt-2 rounded-xl border border-blue-200 px-4 py-2 text-sm font-semibold text-blue-700">Add listings to choose from</button>
     {listings.length > 0 && <fieldset className="mt-5 space-y-2"><legend className="text-sm font-semibold">Choose the vehicles you want to see ({listings.filter(i => i.selected).length} selected of {listings.length})</legend>
@@ -119,15 +99,13 @@ export function BuyerCheckupRequestForm() {
       </label>)}
       <div className="flex items-center justify-between pt-2 text-sm"><button type="button" disabled={page === 0} onClick={() => setPage(p => p - 1)} className="rounded-lg border px-3 py-2 disabled:opacity-40">Previous</button><span>Page {page + 1} of {Math.ceil(listings.length / 50)}</span><button type="button" disabled={(page + 1) * 50 >= listings.length} onClick={() => setPage(p => p + 1)} className="rounded-lg border px-3 py-2 disabled:opacity-40">Next</button></div>
     </fieldset>}
-    <p className="mt-4 text-xs text-slate-500">We’ll prepare a separate request to view each selected vehicle. No seller receives a message until you choose them in the share options and send it.</p>
-    <button disabled={working} type="submit" className="mt-5 w-full rounded-xl bg-blue-600 px-5 py-3.5 text-sm font-semibold text-white disabled:opacity-60">{working ? "Preparing requests…" : "Prepare requests to view selected vehicles"}</button>
+    <p className="mt-4 text-xs text-slate-500">The app prepares a separate viewing request for each selection. Submitting creates private request pages and drafts only; it does not message any seller.</p>
+    <button disabled={working} type="submit" className="mt-5 w-full rounded-xl bg-blue-600 px-5 py-3.5 text-sm font-semibold text-white disabled:opacity-60">{working ? "Preparing requests..." : "Prepare requests to view selected vehicles"}</button>
     {error && <p role="alert" className="mt-3 text-sm text-red-600">{error}</p>}
   </form>
-  {created.length > 0 && <section className="rounded-3xl border border-emerald-200 bg-emerald-50 p-5 sm:p-6"><h2 className="text-xl font-bold text-emerald-900">Requests prepared</h2><p className="mt-2 text-sm">These have not been sent. Choose the intended seller for each request.</p>
+  {created.length > 0 && <section className="rounded-3xl border border-emerald-200 bg-emerald-50 p-5 sm:p-6"><h2 className="text-xl font-bold text-emerald-900">Requests prepared</h2><p className="mt-2 text-sm">These have not been sent. AutoTrader messaging is not connected; this page only prepares drafts.</p>
     <ul className="mt-4 space-y-4">{created.map(result => <li key={result.buyerUrl} className="rounded-xl border border-emerald-200 bg-white p-4">
       <p className="break-all text-sm font-medium">{result.url}</p><div className="mt-3 flex flex-wrap gap-2">
-        <button type="button" onClick={() => share(result)} className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white">Choose seller and share</button>
-        <button type="button" onClick={() => navigator.clipboard.writeText(new URL(result.sellerUrl, window.location.origin).toString())} className="rounded-xl border border-emerald-600 px-4 py-2 text-sm">Copy seller link</button>
         <a href={result.buyerUrl} className="rounded-xl border border-emerald-600 px-4 py-2 text-sm">Open your request</a>
       </div></li>)}</ul>
   </section>}
