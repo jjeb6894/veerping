@@ -10,8 +10,16 @@ export function buyerName(value: unknown): string {
   }
   return name;
 }
-export function buyerMessage(): string {
-  return "Hi, is this vehicle still available? I’d like to see it. Please let me know when I can view it, and contact me on WhatsApp.";
+const VIEWING_MESSAGES = [
+  "Hi, I’m interested in viewing this vehicle. Is it still available, and when could I come to see it? Please reply through my request page.",
+  "Hello, I’d like to arrange a viewing if the vehicle is still available. What time would suit you? Please reply through my request page.",
+  "Hi there, could I come and see the vehicle if it’s still for sale? Let me know what day works for you using my request page.",
+];
+
+export function buyerMessage(seed?: string): string {
+  if (!seed) return VIEWING_MESSAGES[0];
+  const index = [...seed].reduce((sum, character) => sum + character.codePointAt(0)!, 0) % VIEWING_MESSAGES.length;
+  return VIEWING_MESSAGES[index];
 }
 export function privatePhone(country: unknown, value: unknown) {
   if (typeof country !== "string" || !getCountries().includes(country as CountryCode) ||

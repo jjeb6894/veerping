@@ -2,8 +2,14 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { buyerName, buyerMessage, privatePhone, redactContact } from "../lib/checkup-contact.ts";
 
-test("automatic viewing message does not reveal a name", () => {
-  assert.equal(buyerMessage(), "Hi, is this vehicle still available? I’d like to see it. Please let me know when I can view it, and contact me on WhatsApp.");
+test("viewing messages vary naturally without a name or contact detail", () => {
+  assert.equal(buyerMessage(), "Hi, I’m interested in viewing this vehicle. Is it still available, and when could I come to see it? Please reply through my request page.");
+  assert.equal(buyerMessage("request-1"), buyerMessage("request-1"));
+  const variants = new Set(["request-1", "request-2", "request-3", "request-4", "request-5"].map(buyerMessage));
+  assert.ok(variants.size > 1);
+  for (const message of variants) {
+    assert.doesNotMatch(message, /whatsapp|\+\d|\b\d{7,}\b/i);
+  }
   for (const name of ["Amina +44 7700 900123", "Amina wa.me/447700900123", "Amina seven seven zero zero"]) {
     assert.throws(() => buyerName(name));
   }

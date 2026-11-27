@@ -7,6 +7,16 @@ export function isUkAutotraderVehicleLink(value: string): boolean {
   } catch { return false; }
 }
 
+export function isUkAutotraderAssetUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    const host = url.hostname.toLowerCase();
+    const allowedHost = host === "autotrader.co.uk" || host.endsWith(".autotrader.co.uk") ||
+      host === "atcdn.co.uk" || host.endsWith(".atcdn.co.uk");
+    return url.protocol === "https:" && !url.username && !url.password && !url.port && allowedHost;
+  } catch { return false; }
+}
+
 export function parseUkAutotraderList(text: string): string[] {
   return [...new Set(text.split(/[\s,]+/).map(value => value.trim()).filter(Boolean))]
     .filter(isUkAutotraderVehicleLink);

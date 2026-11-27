@@ -277,23 +277,42 @@ export async function fetchAutoTraderListing(listingUrl: string): Promise<Listin
   let url: URL;
   try { url = new URL(listingUrl); }
   catch { return failure("unsupported", "The listing URL is invalid."); }
-  if (url.protocol !== "https:" || !["autotrader.com", "www.autotrader.com", "autotrader.co.uk", "www.autotrader.co.uk"].includes(url.hostname.toLowerCase())) {
-    return failure("unsupported", "This is not a supported AutoTrader listing URL.");
-  }
-  if (!(/^\/cars-for-sale\/vehicle\/\d+\/?$/.test(url.pathname) || url.hostname.endsWith(".co.uk") && /(?:car-details|\/details\/)/.test(url.pathname))) {
+  const isSupportedVehiclePage = (candidate: URL) => {
+    const host = candidate.hostname.toLowerCase();
+    const trustedHost = ["autotrader.com", "www.autotrader.com", "autotrader.co.uk", "www.autotrader.co.uk"].includes(host);
+    const supportedPath = host.endsWith(".co.uk")
+      ? /^\/(?:car-details|details)\/\d+\/?$/.test(candidate.pathname)
+      : /^\/cars-for-sale\/vehicle\/\d+\/?$/.test(candidate.pathname);
+    return candidate.protocol === "https:" && !candidate.username && !candidate.password && !candidate.port && trustedHost && supportedPath;
+  };
+  if (!isSupportedVehiclePage(url)) {
     return failure("unsupported", "This AutoTrader URL does not point to a vehicle listing.");
   }
 
-  let response: Response;
+  let response: Response | undefined;
+  let currentUrl = url;
   try {
-    response = await fetch(url, { headers: { Accept: "text/html,application/xhtml+xml" }, redirect: "follow" });
+    const redirectStatuses = new Set([301, 302, 303, 307, 308]);
+    for (let redirects = 0; redirects <= 3; redirects++) {
+      response = await fetch(currentUrl, { headers: { Accept: "text/html,application/xhtml+xml" }, redirect: "manual" });
+      if (!redirectStatuses.has(response.status)) break;
+      const location = response.headers.get("location");
+      await response.body?.cancel().catch(() => undefined);
+      if (!location || redirects === 3) return failure("unsupported", "AutoTrader redirected outside supported listing pages.");
+      let nextUrl: URL;
+      try { nextUrl = new URL(location, currentUrl); }
+      catch { return failure("unsupported", "AutoTrader returned an invalid redirect."); }
+      if (!isSupportedVehiclePage(nextUrl)) return failure("unsupported", "AutoTrader redirected outside supported listing pages.");
+      currentUrl = nextUrl;
+    }
   } catch {
     return failure("required_data_unavailable", "AutoTrader could not be reached from the report server.");
   }
-  const finalUrl = response.url || url.toString();
+  if (!response) return failure("required_data_unavailable", "AutoTrader returned no response.");
+  const finalUrl = currentUrl.toString();
   diagnostics.finalUrl = diagnosticUrl(finalUrl);
   diagnostics.httpStatus = response.status;
-  diagnostics.redirected = response.redirected;
+  diagnostics.redirected = currentUrl.toString() !== url.toString();
   diagnostics.responseHeaders = Object.fromEntries(["content-type", "content-length", "server", "cache-control"]
     .map(key => [key, response.headers.get(key)]).filter((entry): entry is [string, string] => entry[1] !== null));
   const log = (listing: ListingSnapshot) => {
@@ -312,7 +331,7 @@ export async function fetchAutoTraderListing(listingUrl: string): Promise<Listin
     diagnostics.responseBytes = bytes.byteLength;
     if (bytes.byteLength > MAX_HTML_BYTES) return log(failure("required_data_unavailable", "The listing page exceeds the preview limit."));
     const finalPageUrl = new URL(finalUrl);
-    if (!["autotrader.com", "www.autotrader.com", "autotrader.co.uk", "www.autotrader.co.uk"].includes(finalPageUrl.hostname.toLowerCase())) {
+    if (!isSupportedVehiclePage(finalPageUrl)) {
       return log(failure("unsupported", "The listing redirected outside AutoTrader."));
     }
     return log(parseVehicleListing(new TextDecoder().decode(bytes), finalPageUrl.toString(), diagnostics));

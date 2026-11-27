@@ -1,6 +1,6 @@
 import { fetchAutoTraderListing } from "@/lib/listing-parser";
 import { renderAutoTraderListing } from "@/lib/rendered-autotrader";
-import { isUkAutotraderVehicleLink } from "@/lib/autotrader-list";
+import { isUkAutotraderAssetUrl, isUkAutotraderVehicleLink } from "@/lib/autotrader-list";
 import { normalizeVehicleDetails } from "@/lib/ollama-vehicle";
 import { getAdminSupabase } from "@/lib/supabase-admin";
 import { privatePhone, redactContact } from "@/lib/checkup-contact";
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
         vehicle_link: url.toString(), vehicle_title: redactContact(vehicle.title),
         vehicle_price: redactContact(vehicle.price),
         vehicle_summary: redactContact(vehicle.summary),
-        vehicle_images: (listing?.images ?? []).filter(image => { try { return new URL(image).protocol === "https:"; } catch { return false; } }).slice(0, 8),
+        vehicle_images: (listing?.images ?? []).filter(isUkAutotraderAssetUrl).slice(0, 8),
         buyer_name: null, buyer_payment_intent: body.paymentIntent,
         buyer_access_hash: tokenHash(buyerToken), seller_access_hash: tokenHash(sellerToken), contact_masked: contact.masked,
       }, phone: contact.full,

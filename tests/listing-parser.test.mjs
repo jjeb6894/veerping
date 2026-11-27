@@ -77,6 +77,32 @@ test('UK structured listing remains supported and no network call is made for un
   assert.equal((await fetchAutoTraderListing('https://www.autotrader.com/')).sourceStatus, 'unsupported');
 });
 
+test('AutoTrader redirects are followed only when the next page is a supported listing', async () => {
+  const uk = 'https://www.autotrader.co.uk/car-details/123456789';
+  let calls = 0;
+  globalThis.fetch = async (_input, init) => {
+    calls++;
+    assert.equal(init.redirect, 'manual');
+    return new Response('', { status: 302, headers: { location: 'http://127.0.0.1/private' } });
+  };
+  const blocked = await fetchAutoTraderListing(uk);
+  assert.equal(blocked.sourceStatus, 'unsupported');
+  assert.equal(calls, 1);
+
+  calls = 0;
+  globalThis.fetch = async (_input, init) => {
+    calls++;
+    assert.equal(init.redirect, 'manual');
+    if (calls === 1) return new Response('', { status: 302, headers: { location: '/car-details/987654321' } });
+    return new Response('<script type="application/ld+json">{"@type":"Car","name":"2020 Mini Cooper","offers":{"price":11000,"priceCurrency":"GBP"}}</script>');
+  };
+  const followed = await fetchAutoTraderListing(uk);
+  assert.equal(followed.sourceStatus, 'extracted');
+  assert.equal(followed.listingUrl, 'https://www.autotrader.co.uk/car-details/987654321');
+  assert.equal(followed.diagnostics.redirected, true);
+  assert.equal(calls, 2);
+});
+
 test('UK rendered listing extracts the advertised price and listing gallery photos', () => {
   const uk = 'https://www.autotrader.co.uk/car-details/123456789';
   const html = `<meta name="og:title" content="2021 Black BMW X3 for sale for £32,405 in Orpington">
